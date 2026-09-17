@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BarCraft - 調酒酒譜查詢與工藝分享平台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts: Inter & Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            speakeasy: {
+              950: '#0a0c10',
+              900: '#11141c',
+              850: '#171b26',
+              800: '#1f2433',
+              700: '#2e364a',
+            },
+            amber: {
+              450: '#f59e0b',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom refined scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0c10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2e364a;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-speakeasy-950 text-slate-100 font-sans min-h-screen antialiased flex flex-col selection:bg-amber-500 selection:text-speakeasy-950">
+
+  <header class="sticky top-0 z-40 bg-speakeasy-950/80 backdrop-blur-md border-b border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="resetAllFilters()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20 text-speakeasy-950">
+          <i class="fa-solid fa-martini-glass-citrus text-xl"></i>
+        </div>
+        <div>
+          <span class="text-lg sm:text-xl font-serif font-bold tracking-wide text-white block">BarCraft</span>
+          <span class="text-[10px] sm:text-xs text-amber-400 font-medium tracking-wider uppercase block">Cocktail Archive & ABV Engine</span>
+        </div>
+      </div>
+
+      <!-- Desktop Search Bar -->
+      <div class="hidden md:flex flex-1 max-w-md mx-6 relative">
+        <div class="relative w-full">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+          <input 
+            type="text" 
+            id="globalSearchInput"
+            oninput="handleSearchInput(this.value)"
+            placeholder="搜尋調酒名、基酒、材料、指定品牌或同義詞..." 
+            class="w-full bg-speakeasy-900 border border-white/10 rounded-2xl pl-10 pr-10 py-2 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all shadow-inner"
+          >
+          <button 
+            id="clearSearchBtn" 
+            onclick="clearSearch()" 
+            class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Top Action Buttons -->
+      <div class="flex items-center gap-2.5">
+        <button 
+          id="toggleFavoritesBtn"
+          onclick="toggleFavoritesOnly()"
+          class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium border border-white/10 bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 transition-all flex items-center gap-1.5 shadow-sm"
+          title="切換僅查看已收藏的酒譜">
+          <i class="fa-solid fa-bookmark text-amber-400"></i>
+          <span class="hidden sm:inline">我的收藏</span>
+        </button>
+
+        <button 
+          onclick="openAddModal()"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-500 to-amber-400 text-speakeasy-950 hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-lg shadow-amber-500/20">
+          <i class="fa-solid fa-plus text-sm"></i>
+          <span>新增酒譜</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Search Bar -->
+    <div class="px-4 pb-3 md:hidden">
+      <div class="relative w-full">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+        <input 
+          type="text" 
+          id="mobileSearchInput"
+          oninput="handleSearchInput(this.value)"
+          placeholder="搜尋酒名、風味、材料品牌 (如: 坦奎利)..." 
+          class="w-full bg-speakeasy-900 border border-white/10 rounded-xl pl-8 pr-8 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+        >
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Hero Announcement & Stats -->
+    <div class="relative rounded-3xl p-6 sm:p-8 mb-8 overflow-hidden bg-gradient-to-r from-speakeasy-900 via-speakeasy-850 to-speakeasy-900 border border-white/10 shadow-2xl">
+      <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl text-amber-500 pointer-events-none">
+        <i class="fa-solid fa-champagne-glasses"></i>
+      </div>
+      <div class="max-w-2xl relative z-10">
+        <span class="px-3 py-1 rounded-full text-[11px] font-semibold tracking-wide uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-3 inline-block">
+          Craft Cocktails & Science
+        </span>
+        <h1 class="text-2xl sm:text-4xl font-serif font-bold text-white mb-2 leading-tight">
+          探索調酒藝術，<span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">精準掌控風味與酒度</span>
+        </h1>
+        <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+          支援指定材料品牌標準化比對、多維風味標籤快選，並內建依經典技法融水比率換算的即時 ABV 酒精濃度推估引擎。
+        </p>
+      </div>
+    </div>
+
+    <!-- Flavor Profile Filter Bar -->
+    <div class="mb-5 p-4 rounded-2xl bg-speakeasy-900/90 border border-white/10 shadow-lg">
+      <div class="flex items-center justify-between gap-2 mb-2.5">
+        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-400">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>風味輪廓快速篩選 (Flavor Profile)</span>
+        </div>
+        <button onclick="setFlavorFilter('all')" class="text-[11px] text-slate-400 hover:text-amber-400 transition-colors">
+          重設風味
+        </button>
+      </div>
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" id="flavorFilterContainer">
+        <!-- Dynamically injected flavor filter pills -->
+      </div>
+    </div>
+
+    <!-- Alcohol Strength (ABV) Filter Bar -->
+    <div class="mb-5 px-4 py-3 rounded-2xl bg-speakeasy-900/70 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-2 text-slate-300 font-medium whitespace-nowrap">
+        <i class="fa-solid fa-gauge-high text-amber-500"></i>
+        <span>酒精濃度分級 (ABV Filter)：</span>
+      </div>
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none" id="abvFilterContainer">
+        <button onclick="setAbvFilter('all', this)" class="abv-pill px-3 py-1.5 rounded-xl transition-all bg-amber-500 text-speakeasy-950 font-bold whitespace-nowrap">全部濃度</button>
+        <button onclick="setAbvFilter('mocktail', this)" class="abv-pill px-3 py-1.5 rounded-xl transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5 whitespace-nowrap">🌱 無酒精 (0%)</button>
+        <button onclick="setAbvFilter('light', this)" class="abv-pill px-3 py-1.5 rounded-xl transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5 whitespace-nowrap">🍹 輕盈 (≤12%)</button>
+        <button onclick="setAbvFilter('classic', this)" class="abv-pill px-3 py-1.5 rounded-xl transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5 whitespace-nowrap">🍸 經典微醺 (13-22%)</button>
+        <button onclick="setAbvFilter('strong', this)" class="abv-pill px-3 py-1.5 rounded-xl transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5 whitespace-nowrap">🥃 濃烈 (&gt;22%)</button>
+      </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/5">
+      <!-- Base Spirits Filter -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" id="categoryFilterContainer">
+        <button onclick="setCategory('all', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-amber-500 text-speakeasy-950 shadow-md shadow-amber-500/20">全部基酒</button>
+        <button onclick="setCategory('Gin', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">琴酒 Gin</button>
+        <button onclick="setCategory('Whiskey', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">威士忌 Whisky</button>
+        <button onclick="setCategory('Rum', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">蘭姆酒 Rum</button>
+        <button onclick="setCategory('Tequila', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">龍舌蘭 Tequila</button>
+        <button onclick="setCategory('Vodka', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">伏特加 Vodka</button>
+        <button onclick="setCategory('Brandy', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">白蘭地 Brandy</button>
+        <button onclick="setCategory('Other', this)" class="category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5">其他/無酒精</button>
+      </div>
+
+      <!-- Sorting & Active Counter -->
+      <div class="flex items-center justify-between md:justify-end gap-3 text-xs text-slate-400">
+        <span id="recipeCountLabel" class="font-medium text-slate-300 whitespace-nowrap">載入中...</span>
+        <div class="flex items-center gap-1.5 bg-speakeasy-850 border border-white/5 px-3 py-1.5 rounded-xl">
+          <i class="fa-solid fa-arrow-down-wide-short text-amber-500"></i>
+          <select id="sortSelect" onchange="applySorting(this.value)" class="bg-transparent text-slate-200 text-xs focus:outline-none cursor-pointer">
+            <option value="likes" class="bg-speakeasy-900 text-white">熱門讚數 (由多至少)</option>
+            <option value="newest" class="bg-speakeasy-900 text-white">最新建立</option>
+            <option value="name" class="bg-speakeasy-900 text-white">酒譜名稱 (A-Z)</option>
+            <option value="abv_desc" class="bg-speakeasy-900 text-white">酒精濃度 (由高至低)</option>
+            <option value="abv_asc" class="bg-speakeasy-900 text-white">酒精濃度 (由低至高)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Filter Tags Display -->
+    <div id="activeFilterTags" class="hidden mb-6 flex flex-wrap items-center gap-2">
+      <span class="text-xs text-slate-400">篩選條件：</span>
+      <div id="filterTagList" class="flex flex-wrap items-center gap-1.5"></div>
+      <button onclick="resetAllFilters()" class="text-xs text-amber-400 hover:underline ml-2">清除全部條件</button>
+    </div>
+
+    <div id="recipesGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Dynamically generated recipe cards -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden py-16 text-center">
+      <div class="w-16 h-16 rounded-full bg-speakeasy-850 border border-white/10 flex items-center justify-center mx-auto mb-4 text-slate-500 text-2xl">
+        <i class="fa-solid fa-wine-bottle"></i>
+      </div>
+      <h3 class="text-lg font-medium text-white mb-1">找不到相符的酒譜</h3>
+      <p class="text-xs text-slate-400 max-w-sm mx-auto mb-4">請嘗試調整搜尋關鍵字、風味輪廓、或重設篩選條件。</p>
+      <button onclick="resetAllFilters()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-500 text-speakeasy-950 hover:bg-amber-400 transition-colors">
+        重設所有篩選條件
+      </button>
+    </div>
+  </main>
+
+  <footer class="border-t border-white/5 bg-speakeasy-950 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-martini-glass-citrus text-amber-500"></i>
+        <span class="text-slate-400 font-serif font-semibold">BarCraft Archive</span>
+        <span>— 調酒文化、風味同義詞庫與工藝演算</span>
+      </div>
+      <div class="text-[11px] text-slate-500">
+        理性飲酒 · 未滿 18 歲請勿飲酒 · 禁止酒駕
+      </div>
+    </div>
+  </footer>
+
+  <!-- Recipe Detail Modal -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="relative w-full max-w-2xl bg-speakeasy-900 border border-white/15 rounded-3xl overflow-hidden shadow-2xl transition-all">
+      
+      <!-- Close Button -->
+      <button onclick="closeDetailModal()" class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/50 hover:bg-black text-slate-300 hover:text-white flex items-center justify-center backdrop-blur transition-all border border-white/10">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <!-- Modal Content Container -->
+      <div class="max-h-[85vh] overflow-y-auto">
+        <!-- Hero Header Image -->
+        <div class="relative h-60 sm:h-72 w-full bg-speakeasy-950">
+          <img id="detailImg" src="" alt="" class="w-full h-full object-cover">
+          <div class="absolute inset-0 bg-gradient-to-t from-speakeasy-900 via-speakeasy-900/40 to-transparent"></div>
+          
+          <div class="absolute bottom-4 left-6 right-6">
+            <div class="flex items-center gap-2 mb-2 flex-wrap">
+              <span id="detailBaseTag" class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500 text-speakeasy-950"></span>
+              <span id="detailMethodTag" class="px-2.5 py-0.5 rounded-md text-xs font-medium bg-white/10 text-slate-200 border border-white/10"></span>
+              <span id="detailAbvBadge" class="px-2.5 py-0.5 rounded-md text-xs font-mono font-bold border"></span>
+            </div>
+            <h2 id="detailTitle" class="text-2xl sm:text-3xl font-serif font-bold text-white"></h2>
+            <p id="detailSubtitle" class="text-xs sm:text-sm text-slate-300 italic font-serif"></p>
+          </div>
+        </div>
+
+        <!-- Body Content -->
+        <div class="p-6 space-y-6">
+
+          <!-- Profile Badges (Glass, Ice, Garnish) -->
+          <div class="grid grid-cols-3 gap-3 p-3.5 bg-speakeasy-850 rounded-2xl border border-white/5 text-center text-xs">
+            <div class="p-2 rounded-xl">
+              <span class="text-slate-400 block mb-1">推薦杯型</span>
+              <span id="detailGlass" class="font-medium text-amber-300"></span>
+            </div>
+            <div class="p-2 rounded-xl border-x border-white/10">
+              <span class="text-slate-400 block mb-1">冰塊種類</span>
+              <span id="detailIce" class="font-medium text-amber-300"></span>
+            </div>
+            <div class="p-2 rounded-xl">
+              <span class="text-slate-400 block mb-1">風味裝飾</span>
+              <span id="detailGarnish" class="font-medium text-amber-300"></span>
+            </div>
+          </div>
+
+          <!-- ABV Science Breakdown Card -->
+          <div class="p-4 rounded-2xl bg-speakeasy-850/70 border border-white/10 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-flask-vial text-amber-400 text-sm"></i>
+                <span class="text-xs font-semibold text-slate-200">酒精濃度推估與物理融水分析 (ABV Engine)</span>
+              </div>
+              <span id="detailAbvStrengthText" class="text-xs font-bold px-2.5 py-0.5 rounded-full"></span>
+            </div>
+
+            <!-- Key Metrics Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+              <div class="p-2.5 rounded-xl bg-speakeasy-900 border border-white/5">
+                <span class="text-[10px] text-slate-400 block">最終預估 ABV</span>
+                <span id="detailAbvValue" class="text-base font-mono font-bold text-amber-400">0.0%</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-speakeasy-900 border border-white/5">
+                <span class="text-[10px] text-slate-400 block">技法融水稀釋</span>
+                <span id="detailDilutionRate" class="text-base font-mono font-bold text-sky-400">+0%</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-speakeasy-900 border border-white/5">
+                <span class="text-[10px] text-slate-400 block">純酒精淨重</span>
+                <span id="detailPureAlcohol" class="text-base font-mono font-bold text-rose-400">0.0 ml</span>
+              </div>
+              <div class="p-2.5 rounded-xl bg-speakeasy-900 border border-white/5">
+                <span class="text-[10px] text-slate-400 block">出酒總量 (含融水)</span>
+                <span id="detailTotalVolume" class="text-base font-mono font-bold text-emerald-400">0 ml</span>
+              </div>
+            </div>
+
+            <!-- Liquid Structure Stacked Bar -->
+            <div class="space-y-1.5 pt-1">
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span class="font-medium text-slate-300">出杯液體結構比例 (Liquid Structure)</span>
+                <span id="detailCompositionStats" class="font-mono text-[10px]"></span>
+              </div>
+              <div class="w-full h-3 rounded-full bg-speakeasy-950 overflow-hidden flex border border-white/10 p-0.5">
+                <div id="barAlcohol" class="h-full bg-rose-500 rounded-l-full transition-all duration-500" style="width: 0%" title="純酒精"></div>
+                <div id="barMixers" class="h-full bg-emerald-500 transition-all duration-500" style="width: 0%" title="果汁與無酒精材料水份"></div>
+                <div id="barDilution" class="h-full bg-sky-400 rounded-r-full transition-all duration-500" style="width: 0%" title="技法融水"></div>
+              </div>
+              <div class="flex items-center justify-center gap-4 text-[10px] text-slate-400 pt-0.5">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> 純酒精</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> 果汁/副材料水份</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400 inline-block"></span> 冰塊融水</span>
+              </div>
+            </div>
+
+            <!-- Standard Drink & Health Equivalent -->
+            <div class="p-2.5 rounded-xl bg-speakeasy-900/80 border border-white/5 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2 text-slate-300">
+                <i class="fa-solid fa-beer-mug-empty text-amber-500"></i>
+                <span>標準酒精當量 (Standard Drinks)：</span>
+              </div>
+              <div class="text-right">
+                <span id="detailStandardDrink" class="font-mono font-bold text-amber-400 text-sm">0.0</span>
+                <span class="text-[10px] text-slate-400 ml-1" id="detailBeerEquivalent">(約 0 罐啤酒)</span>
+              </div>
+            </div>
+
+            <!-- Technique Dilution Simulator -->
+            <div class="pt-1.5 border-t border-white/5">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+                <span class="flex items-center gap-1">
+                  <i class="fa-solid fa-sliders text-amber-400"></i>
+                  <span>技法融水模擬（點擊測試不同調製法的濃度變化）：</span>
+                </span>
+                <button type="button" onclick="resetDetailMethodSimulator()" class="text-[10px] text-amber-400/80 hover:text-amber-300">恢復預設</button>
+              </div>
+              <div class="grid grid-cols-5 gap-1 text-center" id="detailMethodSimulatorButtons">
+                <button type="button" onclick="simulateDetailTechnique('Stir')" class="sim-method-btn px-2 py-1 rounded-lg text-[10px] border border-white/10 hover:border-amber-500/50 bg-speakeasy-900 text-slate-300 transition-all">Stir 攪拌</button>
+                <button type="button" onclick="simulateDetailTechnique('Shake')" class="sim-method-btn px-2 py-1 rounded-lg text-[10px] border border-white/10 hover:border-amber-500/50 bg-speakeasy-900 text-slate-300 transition-all">Shake 搖盪</button>
+                <button type="button" onclick="simulateDetailTechnique('Build')" class="sim-method-btn px-2 py-1 rounded-lg text-[10px] border border-white/10 hover:border-amber-500/50 bg-speakeasy-900 text-slate-300 transition-all">Build 直調</button>
+                <button type="button" onclick="simulateDetailTechnique('Blend')" class="sim-method-btn px-2 py-1 rounded-lg text-[10px] border border-white/10 hover:border-amber-500/50 bg-speakeasy-900 text-slate-300 transition-all">Blend 霜凍</button>
+                <button type="button" onclick="simulateDetailTechnique('Layer')" class="sim-method-btn px-2 py-1 rounded-lg text-[10px] border border-white/10 hover:border-amber-500/50 bg-speakeasy-900 text-slate-300 transition-all">Layer 分層</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flavor Profile Tags Section in Modal -->
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">風味調性 (Flavor Profile)</span>
+            <div id="detailFlavorsContainer" class="flex flex-wrap gap-2"></div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">酒譜介紹</span>
+            <p id="detailDesc" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+          </div>
+
+          <!-- Ingredients List with Brand Tags -->
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2.5">調配材料與指定品牌</span>
+            <div id="detailIngredients" class="space-y-2"></div>
+          </div>
+
+          <!-- Preparation Steps -->
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2.5">調製步驟</span>
+            <ol id="detailSteps" class="space-y-2 text-xs sm:text-sm text-slate-300 list-decimal list-inside"></ol>
+          </div>
+
+          <!-- Author Info -->
+          <div class="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+            <span id="detailAuthor"></span>
+            <div class="flex items-center gap-3">
+              <button id="modalLikeBtn" onclick="toggleModalLike()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-speakeasy-800 hover:bg-speakeasy-750 transition-colors">
+                <i class="fa-regular fa-heart text-rose-400"></i>
+                <span id="modalLikeCount">0</span>
+              </button>
+              <button id="modalFavBtn" onclick="toggleModalFavorite()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-speakeasy-800 hover:bg-speakeasy-750 transition-colors">
+                <i class="fa-regular fa-bookmark text-amber-400"></i>
+                <span id="modalFavText">收藏</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add New Recipe Modal -->
+  <div id="addModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+    <div class="relative w-full max-w-3xl bg-speakeasy-900 border border-white/15 rounded-3xl overflow-hidden shadow-2xl transition-all my-8">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-white/10 flex items-center justify-between bg-speakeasy-850/50">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-white">新增自訂調酒酒譜</h2>
+          <p class="text-xs text-slate-400 mt-0.5">標註配方品牌、多選風味，並透過融水模型即時預估出杯酒精度</p>
+        </div>
+        <button onclick="closeAddModal()" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Form Content -->
+      <form id="addRecipeForm" class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+        
+        <!-- Cocktail Basic Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">中文名稱 <span class="text-rose-400">*</span></label>
+            <input type="text" id="inputNameZh" required placeholder="例如：內格羅尼" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">英文 / 原文品名</label>
+            <input type="text" id="inputNameEn" placeholder="例如：Negroni" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <!-- Spirit Base, Technique & Bartender Author -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">主要基酒 <span class="text-rose-400">*</span></label>
+            <select id="inputBase" required class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+              <option value="Gin">琴酒 (Gin)</option>
+              <option value="Whiskey">威士忌 (Whisky)</option>
+              <option value="Rum">蘭姆酒 (Rum)</option>
+              <option value="Tequila">龍舌蘭 (Tequila)</option>
+              <option value="Vodka">伏特加 (Vodka)</option>
+              <option value="Brandy">白蘭地 (Brandy)</option>
+              <option value="Other">其他 / 無酒精 (Mocktail)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">調製技法</label>
+            <select id="inputMethod" onchange="triggerLiveAbvCalculation()" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+              <option value="Stir (攪拌法)">Stir (攪拌法 / 稀釋率約 22%)</option>
+              <option value="Shake (搖盪法)">Shake (搖盪法 / 稀釋率約 33%)</option>
+              <option value="Build (直調法)">Build (直調法 / 稀釋率約 18%)</option>
+              <option value="Blend (霜凍法)">Blend (霜凍法 / 稀釋率約 45%)</option>
+              <option value="Layer (分層法)">Layer (分層法 / 無稀釋 0%)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">調酒師署名</label>
+            <input type="text" id="inputAuthor" placeholder="例如：BarCraft Master" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <!-- Glass, Ice & Garnish with Datalist Suggestions -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">建議杯型</label>
+            <input type="text" id="inputGlass" list="glassPresets" placeholder="例如：古典杯" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+            <datalist id="glassPresets">
+              <option value="古典杯 (Rocks / Old Fashioned Glass)">
+              <option value="馬丁尼杯 (Martini / Cocktail Glass)">
+              <option value="高球杯 (Highball / Collins Glass)">
+              <option value="碟型香檳杯 (Coupe Glass)">
+              <option value="尼克與諾拉杯 (Nick & Nora Glass)">
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">冰塊類型</label>
+            <input type="text" id="inputIce" list="icePresets" placeholder="例如：手鑿大方冰" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+            <datalist id="icePresets">
+              <option value="手鑿大方老冰 (Clear Ice Cube)">
+              <option value="方形實心冰塊 (Cubed Ice)">
+              <option value="純淨冰球 (Ice Sphere)">
+              <option value="碎冰 (Crushed Ice)">
+              <option value="純飲無冰 (Straight Up / Neat)">
+            </datalist>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">裝飾物 (Garnish)</label>
+            <input type="text" id="inputGarnish" list="garnishPresets" placeholder="例如：橙皮捲" class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500">
+            <datalist id="garnishPresets">
+              <option value="橙皮捲 (Orange Twist)">
+              <option value="檸檬皮油 (Lemon Peel)">
+              <option value="油漬橄欖 (Green Olive)">
+              <option value="酒漬櫻桃 (Maraschino Cherry)">
+              <option value="新鮮薄荷葉 (Fresh Mint)">
+            </datalist>
+          </div>
+        </div>
+
+        <!-- Flavor Multi-Select Picker -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">
+            風味標籤 (可複選)
+          </label>
+          <div id="formFlavorSelector" class="flex flex-wrap gap-2 p-3 bg-speakeasy-850 rounded-2xl border border-white/10">
+            <!-- Dynamically populated flavor chips for toggling -->
+          </div>
+        </div>
+
+        <!-- Ingredients Section with Brand Tags -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-semibold text-slate-300 uppercase flex items-center gap-1.5">
+              <span>調配材料、指定品牌與酒精濃度</span>
+              <span class="text-rose-400">*</span>
+            </label>
+            <button type="button" onclick="addIngredientRow()" class="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
+              <i class="fa-solid fa-plus-circle"></i> 新增一列材料
+            </button>
+          </div>
+          
+          <div id="ingredientRowsContainer" class="space-y-2.5">
+            <!-- Dynamic rows will be injected -->
+          </div>
+
+          <!-- Live ABV Estimation Box -->
+          <div class="mt-4 p-4 rounded-2xl bg-speakeasy-950 border border-amber-500/30 shadow-inner flex flex-col gap-3">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl flex-shrink-0">
+                  <i class="fa-solid fa-gauge-high"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-200">出酒酒精濃度即時預估 (Live ABV)</span>
+                    <span id="liveAbvBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">微醺經典</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-0.5" id="liveAbvDetails">
+                    填寫配方份量時，系統依材料酒精濃度與技法融水係數即時計算
+                  </div>
+                </div>
+              </div>
+              <div class="text-right flex items-baseline gap-1 self-end sm:self-auto">
+                <span class="text-xs text-slate-400 font-mono">預估</span>
+                <span id="liveAbvNumber" class="text-2xl font-mono font-extrabold text-amber-400">0.0%</span>
+                <span class="text-xs text-slate-400 font-mono">ABV</span>
+              </div>
+            </div>
+
+            <!-- Mini composition meter -->
+            <div class="w-full bg-speakeasy-900 rounded-full h-2 overflow-hidden flex border border-white/5">
+              <div id="liveBarAlcohol" class="h-full bg-rose-500 transition-all duration-300" style="width: 0%" title="純酒精"></div>
+              <div id="liveBarMixers" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%" title="副材料水份"></div>
+              <div id="liveBarDilution" class="h-full bg-sky-400 transition-all duration-300" style="width: 0%" title="融水"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Steps Section -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-semibold text-slate-300 uppercase">調製步驟 (Steps)</label>
+            <button type="button" onclick="addStepRow()" class="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
+              <i class="fa-solid fa-plus-circle"></i> 新增步驟
+            </button>
+          </div>
+          <div id="stepRowsContainer" class="space-y-2">
+            <!-- Step rows will be injected -->
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">風味描述與故事靈感</label>
+          <textarea id="inputDesc" rows="2" placeholder="分享這杯酒的風味輪廓、口感平衡或創作故事..." class="w-full bg-speakeasy-850 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+
+        <!-- Image Upload Section -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase mb-1.5">上傳照片</label>
+          <div class="flex items-center gap-4">
+            <div id="imagePreviewBox" class="w-24 h-24 rounded-2xl bg-speakeasy-850 border border-dashed border-white/20 flex flex-col items-center justify-center text-slate-400 overflow-hidden relative group">
+              <i class="fa-solid fa-image text-2xl mb-1 text-slate-500" id="previewPlaceholderIcon"></i>
+              <span class="text-[10px]" id="previewPlaceholderText">預覽照片</span>
+              <img id="imagePreview" class="hidden w-full h-full object-cover">
+            </div>
+            <div class="flex-1">
+              <input type="file" id="inputImage" accept="image/*" onchange="handleImageUpload(event)" class="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-speakeasy-950 hover:file:bg-amber-400 cursor-pointer">
+              <p class="text-[11px] text-slate-400 mt-1">支援 JPG、PNG，若無上傳將自動套用預設高質感圖片。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Action Buttons -->
+        <div class="pt-4 border-t border-white/10 flex items-center justify-end gap-3">
+          <button type="button" onclick="closeAddModal()" class="px-5 py-2.5 rounded-xl text-xs sm:text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
+            取消
+          </button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-amber-500 to-amber-400 text-speakeasy-950 hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-amber-500/20">
+            發布酒譜
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-speakeasy-850 border border-amber-500/50 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+      <div id="toastIcon" class="text-amber-400 text-base"></div>
+      <span id="toastMessage" class="text-xs sm:text-sm font-medium"></span>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * 標準字典庫 (CANONICAL TAXONOMY WITH ALIASES)
+     * 解決中英別名、同義詞、品牌與風味查詢障礙
+     * =========================================================================
+     */
+    const TAXONOMY = {
+      glasses: [
+        { id: 'glass_rocks', primaryZh: '古典杯 / 低球杯', primaryEn: 'Old Fashioned / Rocks Glass', aliases: ['rocks', 'old fashioned', '低球杯', '古典杯'] },
+        { id: 'glass_martini', primaryZh: '馬丁尼杯', primaryEn: 'Martini / Cocktail Glass', aliases: ['martini', 'cocktail glass', '馬丁尼', '三角杯'] },
+        { id: 'glass_coupe', primaryZh: '碟型香檳杯', primaryEn: 'Coupe Glass', aliases: ['coupe', '香檳杯', '碟型杯'] },
+        { id: 'glass_highball', primaryZh: '高球杯 / 可林杯', primaryEn: 'Highball / Collins Glass', aliases: ['highball', 'collins', '高球', '長飲杯'] },
+        { id: 'glass_nick_nora', primaryZh: '尼克與諾拉杯', primaryEn: 'Nick & Nora Glass', aliases: ['nick nora', 'nick and nora', '尼克諾拉'] }
+      ],
+      brands: [
+        { id: 'brand_tanqueray', category: 'Gin', abv: 47.3, primaryZh: '坦奎利 (Tanqueray)', primaryEn: 'Tanqueray No. 10 / London Dry', aliases: ['坦奎利', '添佳力', 'tanqueray', 'tanqueray 10', 'tanqueray ten', '坦奎利10號'] },
+        { id: 'brand_bombay', category: 'Gin', abv: 40.0, primaryZh: '龐貝藍鑽 (Bombay Sapphire)', primaryEn: 'Bombay Sapphire', aliases: ['龐貝', '孟買', '藍鑽', 'bombay', 'bombay sapphire'] },
+        { id: 'brand_hendricks', category: 'Gin', abv: 41.4, primaryZh: '亨利爵士 (Hendrick\'s)', primaryEn: 'Hendrick\'s Gin', aliases: ['亨利爵士', '亨利', 'hendricks', 'hendrick\'s', '小黃瓜琴酒'] },
+        { id: 'brand_campari', category: 'Liqueur', abv: 25.0, primaryZh: '金巴利苦酒 (Campari)', primaryEn: 'Campari Bitter', aliases: ['金巴利', '康帕利', 'campari', 'campari bitter', '義大利苦酒'] },
+        { id: 'brand_carpano', category: 'Vermouth', abv: 16.5, primaryZh: '卡帕諾安提卡 (Carpano Antica Formula)', primaryEn: 'Carpano Antica Formula Sweet Vermouth', aliases: ['卡帕諾', '安提卡', 'carpano', 'antica formula', 'carpano antica', '經典紅香艾酒'] },
+        { id: 'brand_bacardi', category: 'Rum', abv: 40.0, primaryZh: '百加得 (Bacardi)', primaryEn: 'Bacardi Carta Blanca', aliases: ['百加得', '白家得', 'bacardi', 'bacardi superior', 'bacardi white'] },
+        { id: 'brand_makers_mark', category: 'Whiskey', abv: 45.0, primaryZh: '美格波本 (Maker\'s Mark)', primaryEn: 'Maker\'s Mark Bourbon', aliases: ['美格', '美格波本', 'maker\'s mark', 'makers mark', '美格紅蠟'] },
+        { id: 'brand_angostura', category: 'Bitters', abv: 44.7, primaryZh: '安格仕苦精 (Angostura Bitters)', primaryEn: 'Angostura Aromatic Bitters', aliases: ['安格仕', '安果', '苦精', 'angostura', 'angostura bitters', 'aromatic bitters'] }
+      ],
+      flavors: [
+        { id: 'flavor_sour', primaryZh: '酸爽清新', primaryEn: 'Sour & Tart', icon: 'fa-lemon', aliases: ['酸', '酸味', 'sour', 'tart', '檸檬'] },
+        { id: 'flavor_sweet', primaryZh: '甘甜圓潤', primaryEn: 'Sweet & Lush', icon: 'fa-candy-cane', aliases: ['甜', '甜味', 'sweet', '甘甜', '蜜'] },
+        { id: 'flavor_bitter', primaryZh: '深沉苦韻', primaryEn: 'Bitter & Complex', icon: 'fa-mortar-pestle', aliases: ['苦', '苦味', 'bitter', '藥草苦', '金巴利'] },
+        { id: 'flavor_bubbly', primaryZh: '輕盈氣泡', primaryEn: 'Effervescent & Bubbly', icon: 'fa-champagne-glasses', aliases: ['氣泡', '氣泡感', 'bubbly', 'effervescent', '蘇打', '通寧'] },
+        { id: 'flavor_fruity', primaryZh: '果香奔放', primaryEn: 'Fruity', icon: 'fa-apple-whole', aliases: ['果香', '水果', 'fruity', 'fruit', '柑橘', '莓果'] },
+        { id: 'flavor_floral', primaryZh: '優雅花香', primaryEn: 'Floral', icon: 'fa-spa', aliases: ['花香', 'floral', '接骨木', '玫瑰', '薰衣草'] },
+        { id: 'flavor_herbal', primaryZh: '草本植物', primaryEn: 'Herbal & Botanical', icon: 'fa-seedling', aliases: ['草本', '植物', 'herbal', 'botanical', '薄荷', '迷迭香'] },
+        { id: 'flavor_smoky', primaryZh: '煙燻木質', primaryEn: 'Smoky & Peaty', icon: 'fa-fire', aliases: ['煙燻', '泥煤', 'smoky', 'peaty', '木質', '桶香'] },
+        { id: 'flavor_spicy', primaryZh: '辛辣溫暖', primaryEn: 'Spicy & Warm', icon: 'fa-pepper-hot', aliases: ['辣', '辛香', 'spicy', '生薑', '肉桂', '胡椒'] },
+        { id: 'flavor_refresh', primaryZh: '冰涼消暑', primaryEn: 'Crisp & Refreshing', icon: 'fa-snowflake', aliases: ['清爽', '消暑', 'crisp', 'refreshing', '解渴'] }
+      ]
+    };
+
+    /**
+     * STREAMING_CHUNK:Configuring the standard ingredient ABV lookup table and dilution model
+     */
+    const INGREDIENT_ABV_MAP = [
+      { keys: ['gin', '琴酒'], abv: 40 },
+      { keys: ['whiskey', 'whisky', '威士忌', 'bourbon', '波本', 'scotch', '黑麥'], abv: 40 },
+      { keys: ['rum', '蘭姆酒', '朗姆'], abv: 40 },
+      { keys: ['tequila', '龍舌蘭', 'mezcal', '梅斯卡爾'], abv: 38 },
+      { keys: ['vodka', '伏特加'], abv: 40 },
+      { keys: ['brandy', '白蘭地', 'cognac', '干邑'], abv: 40 },
+      { keys: ['vermouth', '苦艾酒', '香艾酒'], abv: 16.5 },
+      { keys: ['campari', '金巴利'], abv: 25 },
+      { keys: ['aperol', '阿佩羅'], abv: 11 },
+      { keys: ['cointreau', '君度', 'triple sec', '白柑橘', '橙酒'], abv: 35 },
+      { keys: ['kahlua', '咖啡酒', '卡魯哇'], abv: 20 },
+      { keys: ['baileys', '貝禮詩', '奶酒'], abv: 17 },
+      { keys: ['chartreuse', '夏翠絲'], abv: 55 },
+      { keys: ['absinthe', '艾碧斯'], abv: 65 },
+      { keys: ['amaro', '阿瑪羅'], abv: 30 },
+      { keys: ['bitters', '苦精', 'angostura'], abv: 44.7 },
+      { keys: ['juice', '汁', '檸檬', '青檸', 'lime', 'lemon', 'orange', '柳橙', '葡萄柚', '蔓越莓'], abv: 0 },
+      { keys: ['syrup', '糖漿', '方糖', 'sugar', '蜂蜜', 'honey', '焦糖'], abv: 0 },
+      { keys: ['tonic', '通寧', 'soda', '蘇打', '氣泡水', 'coke', '可樂', '薑汁', 'ginger'], abv: 0 },
+      { keys: ['water', '純水', '冷水', '茶', 'tea', '蛋白', 'egg', '奶', '牛奶', 'milk'], abv: 0 }
+    ];
+
+    const METHOD_DILUTION_RATES = {
+      'Stir': 0.22,
+      'Shake': 0.33,
+      'Build': 0.18,
+      'Blend': 0.45,
+      'Layer': 0.00
+    };
+
+    /**
+     * STREAMING_CHUNK:Calculating cocktail ABV physics with composition breakdown
+     */
+    function calculateRecipeABV(recipe) {
+      if (!recipe || !Array.isArray(recipe.ingredients) || recipe.ingredients.length === 0) {
+        return {
+          abv: 0,
+          pureAlcoholMl: 0,
+          undilutedMl: 0,
+          dilutedMl: 0,
+          dilutionWaterMl: 0,
+          mixersMl: 0,
+          dilutionRate: 0,
+          alcoholPct: 0,
+          mixersPct: 0,
+          dilutionPct: 0,
+          strengthLevel: 'mocktail',
+          strengthLabel: '無酒精 (0%)',
+          strengthColor: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30'
+        };
+      }
+
+      let dilutionRate = 0.20;
+      const methodStr = (recipe.method || '').toLowerCase();
+      if (methodStr.includes('shake') || methodStr.includes('搖')) dilutionRate = METHOD_DILUTION_RATES['Shake'];
+      else if (methodStr.includes('stir') || methodStr.includes('攪')) dilutionRate = METHOD_DILUTION_RATES['Stir'];
+      else if (methodStr.includes('blend') || methodStr.includes('霜')) dilutionRate = METHOD_DILUTION_RATES['Blend'];
+      else if (methodStr.includes('layer') || methodStr.includes('分層')) dilutionRate = METHOD_DILUTION_RATES['Layer'];
+      else if (methodStr.includes('build') || methodStr.includes('直調')) dilutionRate = METHOD_DILUTION_RATES['Build'];
+
+      let totalPureAlcoholMl = 0;
+      let totalLiquidVolumeMl = 0;
+
+      recipe.ingredients.forEach(ing => {
+        const amountStr = String(ing.amount || '').trim();
+        const numVal = parseFloat(amountStr.replace(/[^\d.]/g, '')) || 0;
+        const unit = (ing.unit || 'ml').toLowerCase();
+
+        let liquidMl = 0;
+        if (unit === 'ml') liquidMl = numVal;
+        else if (unit === 'oz') liquidMl = numVal * 29.57;
+        else if (unit === 'dashes' || unit.includes('滴')) liquidMl = numVal * 0.8;
+        else if (unit === 'bar spoon' || unit.includes('匙')) liquidMl = numVal * 5.0;
+        else if (unit.includes('補滿') || amountStr.includes('補滿')) liquidMl = 90;
+        else liquidMl = 0;
+
+        if (liquidMl <= 0) return;
+
+        let ingredientAbv = (typeof ing.abv === 'number' && !isNaN(ing.abv)) ? ing.abv : null;
+        let resolved = ingredientAbv !== null;
+
+        if (!resolved && ing.brandId) {
+          const brandObj = TAXONOMY.brands.find(b => b.id === ing.brandId);
+          if (brandObj && typeof brandObj.abv === 'number') {
+            ingredientAbv = brandObj.abv;
+            resolved = true;
+          }
+        }
+
+        if (!resolved) {
+          const combined = `${ing.name || ''} ${ing.brandText || ''}`.toLowerCase();
+          for (const rule of INGREDIENT_ABV_MAP) {
+            if (rule.keys.some(k => combined.includes(k.toLowerCase()))) {
+              ingredientAbv = rule.abv;
+              resolved = true;
+              break;
+            }
+          }
+        }
+
+        if (!resolved) {
+          ingredientAbv = (ing.name || '').includes('酒') ? 30 : 0;
+        }
+
+        totalLiquidVolumeMl += liquidMl;
+        totalPureAlcoholMl += liquidMl * (ingredientAbv / 100);
+      });
+
+      const dilutionWaterMl = totalLiquidVolumeMl * dilutionRate;
+      const dilutedVolumeMl = totalLiquidVolumeMl + dilutionWaterMl;
+      const finalAbv = dilutedVolumeMl > 0 ? (totalPureAlcoholMl / dilutedVolumeMl) * 100 : 0;
+      const roundedAbv = Math.round(finalAbv * 10) / 10;
+      const mixersWaterMl = Math.max(0, totalLiquidVolumeMl - totalPureAlcoholMl);
+
+      const alcoholPct = dilutedVolumeMl > 0 ? Math.round((totalPureAlcoholMl / dilutedVolumeMl) * 100) : 0;
+      const dilutionPct = dilutedVolumeMl > 0 ? Math.round((dilutionWaterMl / dilutedVolumeMl) * 100) : 0;
+      const mixersPct = Math.max(0, 100 - alcoholPct - dilutionPct);
+
+      let strengthLevel = 'classic';
+      let strengthLabel = '微醺經典 (13-22%)';
+      let strengthColor = 'text-amber-400 bg-amber-500/15 border-amber-500/30';
+
+      if (roundedAbv === 0) {
+        strengthLevel = 'mocktail';
+        strengthLabel = '無酒精 (0%)';
+        strengthColor = 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30';
+      } else if (roundedAbv <= 12) {
+        strengthLevel = 'light';
+        strengthLabel = '輕盈爽口 (≤12%)';
+        strengthColor = 'text-teal-300 bg-teal-500/15 border-teal-500/30';
+      } else if (roundedAbv <= 22) {
+        strengthLevel = 'classic';
+        strengthLabel = '經典微醺 (13-22%)';
+        strengthColor = 'text-amber-400 bg-amber-500/15 border-amber-500/30';
+      } else {
+        strengthLevel = 'strong';
+        strengthLabel = '醇厚濃烈 (>22%)';
+        strengthColor = 'text-rose-400 bg-rose-500/15 border-rose-500/30';
+      }
+
+      return {
+        abv: roundedAbv,
+        pureAlcoholMl: Math.round(totalPureAlcoholMl * 10) / 10,
+        undilutedMl: Math.round(totalLiquidVolumeMl),
+        dilutedMl: Math.round(dilutedVolumeMl),
+        dilutionWaterMl: Math.round(dilutionWaterMl * 10) / 10,
+        mixersMl: Math.round(mixersWaterMl * 10) / 10,
+        dilutionRate: Math.round(dilutionRate * 100),
+        alcoholPct,
+        mixersPct,
+        dilutionPct,
+        strengthLevel,
+        strengthLabel,
+        strengthColor
+      };
+    }
+
+    /**
+     * STREAMING_CHUNK:Detecting default ABV percentage for ingredient name
+     */
+    function detectDefaultIngredientAbv(name = '', brandText = '') {
+      const combined = `${name} ${brandText}`.toLowerCase();
+      const brandObj = TAXONOMY.brands.find(b => combined.includes(b.primaryEn.toLowerCase()) || combined.includes(b.primaryZh.toLowerCase()));
+      if (brandObj && typeof brandObj.abv === 'number') return brandObj.abv;
+
+      for (const rule of INGREDIENT_ABV_MAP) {
+        if (rule.keys.some(k => combined.includes(k.toLowerCase()))) {
+          return rule.abv;
+        }
+      }
+      return (name.includes('酒') || name.includes('gin') || name.includes('rum') || name.includes('whisky')) ? 40 : 0;
+    }
+
+    /**
+     * STREAMING_CHUNK:Providing seed cocktail recipes with rich flavor profiles
+     */
+    const DEFAULT_RECIPES = [
+      {
+        id: 'seed_negroni',
+        nameZh: '經典內格羅尼',
+        nameEn: 'Negroni',
+        base: 'Gin',
+        method: 'Stir (攪拌法)',
+        author: 'BarCraft 首席調酒師',
+        glass: '古典杯 (Rocks Glass)',
+        ice: '手鑿大方老冰 (Clear Ice Cube)',
+        garnish: '新鮮橙皮捲 (Orange Twist)',
+        desc: '這款義大利國寶級經典擁有紅寶石般深邃光澤，融合了倫敦琴酒的草本杜松子、金巴利的厚實苦甜與紅苦艾酒的草本圓潤。',
+        flavors: ['flavor_bitter', 'flavor_sweet', 'flavor_herbal'],
+        ingredients: [
+          { name: '琴酒', amount: '30', unit: 'ml', brandId: 'brand_tanqueray', brandText: 'Tanqueray No. 10', abv: 47.3 },
+          { name: '金巴利苦酒', amount: '30', unit: 'ml', brandId: 'brand_campari', brandText: 'Campari Bitter', abv: 25.0 },
+          { name: '甜苦艾酒', amount: '30', unit: 'ml', brandId: 'brand_carpano', brandText: 'Carpano Antica Formula', abv: 16.5 }
+        ],
+        steps: [
+          '將調酒杯中加入大塊方冰預冷。',
+          '依序注入琴酒、金巴利苦酒與甜紅苦艾酒。',
+          '使用吧匙順暢攪拌約 25-30 秒至酒液冰透且充分稀釋。',
+          '透過濾冰器將酒液濾入預先放好大冰塊的古典杯中。',
+          '在杯口噴灑橙皮精油並將橙皮扭捲飾於杯中。'
+        ],
+        image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=900&q=80',
+        likes: 128,
+        isLiked: false,
+        isFav: true,
+        createdAt: 1700000000000
+      },
+      {
+        id: 'seed_old_fashioned',
+        nameZh: '古典調酒',
+        nameEn: 'Old Fashioned',
+        base: 'Whiskey',
+        method: 'Build (直調法)',
+        author: 'Bourbon Alchemist',
+        glass: '厚底古典杯 (Rocks Glass)',
+        ice: '純淨大冰球 (Ice Sphere)',
+        garnish: '酒漬櫻桃與橙皮 (Cherry & Orange Peel)',
+        desc: '調酒史上的永恆先驅。透過微量糖與芳香苦精解構波本威士忌的焦糖、香草與橡木桶深層香氣，歷久彌新。',
+        flavors: ['flavor_smoky', 'flavor_sweet', 'flavor_bitter'],
+        ingredients: [
+          { name: '波本威士忌', amount: '60', unit: 'ml', brandId: 'brand_makers_mark', brandText: 'Maker\'s Mark', abv: 45.0 },
+          { name: '安格仕芳香苦精', amount: '3', unit: 'dashes', brandId: 'brand_angostura', brandText: 'Angostura Aromatic Bitters', abv: 44.7 },
+          { name: '原色方糖 / 糖漿', amount: '5', unit: 'ml', brandId: '', brandText: '自製甘蔗糖漿', abv: 0 }
+        ],
+        steps: [
+          '在古典杯中放入原色方糖，滴入 3 Dash 安格仕芳香苦精與少量純水潤濕。',
+          '用搗棒將方糖完全搗碎融化。',
+          '放入一顆純淨大冰球，倒入 60ml 美格波本威士忌。',
+          '以吧匙輕柔攪拌約 20 秒，噴上橙皮油後飾以頂級酒漬櫻桃。'
+        ],
+        image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=900&q=80',
+        likes: 95,
+        isLiked: false,
+        isFav: false,
+        createdAt: 1700000100000
+      },
+      {
+        id: 'seed_gin_tonic',
+        nameZh: '亨利爵士琴通寧',
+        nameEn: 'Hendrick\'s Gin & Tonic',
+        base: 'Gin',
+        method: 'Build (直調法)',
+        author: 'Botanical Explorer',
+        glass: '高球杯 (Highball Glass)',
+        ice: '長條老冰柱 (Ice Spear)',
+        garnish: '薄切小黃瓜片 (Cucumber Ribbon)',
+        desc: '經典沁涼調酒。以亨利爵士琴酒獨特的小黃瓜與保加利亞玫瑰精華為靈魂，搭配氣泡細緻的頂級通寧水，清爽解渴。',
+        flavors: ['flavor_bubbly', 'flavor_refresh', 'flavor_herbal', 'flavor_floral'],
+        ingredients: [
+          { name: '小黃瓜玫瑰琴酒', amount: '50', unit: 'ml', brandId: 'brand_hendricks', brandText: 'Hendrick\'s Gin', abv: 41.4 },
+          { name: '優質通寧水', amount: '120', unit: 'ml', brandId: '', brandText: 'Fever-Tree 經典通寧水', abv: 0 }
+        ],
+        steps: [
+          '高球杯預先冰鎮並放入一根修整平滑的純淨長條老冰。',
+          '沿著冰塊輕輕倒入 50ml 亨利爵士琴酒。',
+          '斜拿酒杯，沿著吧匙緩緩注入冰涼通寧水至九分滿以維持氣泡活躍。',
+          '以吧匙由底向上輕輕提拉一次即可，杯壁貼上長薄片小黃瓜點綴。'
+        ],
+        image: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80',
+        likes: 182,
+        isLiked: false,
+        isFav: true,
+        createdAt: 1700000200000
+      },
+      {
+        id: 'seed_daiquiri',
+        nameZh: '海明威黛綺莉',
+        nameEn: 'Classic Daiquiri',
+        base: 'Rum',
+        method: 'Shake (搖盪法)',
+        author: 'Tropical Sips',
+        glass: '碟型香檳杯 (Coupe Glass)',
+        ice: '搖盪濾冰 (Straight Up)',
+        garnish: '新鮮青檸輪片 (Lime Wheel)',
+        desc: '古巴經典三合一極簡調酒。白蘭姆酒的甘蔗芳醇與青檸的清亮酸度達到絕妙平衡，冷冽順口。',
+        flavors: ['flavor_sour', 'flavor_sweet', 'flavor_refresh'],
+        ingredients: [
+          { name: '白蘭姆酒', amount: '60', unit: 'ml', brandId: 'brand_bacardi', brandText: 'Bacardi Carta Blanca', abv: 40.0 },
+          { name: '新鮮現榨青檸汁', amount: '30', unit: 'ml', brandId: '', brandText: '鮮榨青檸', abv: 0 },
+          { name: '二號砂糖漿', amount: '15', unit: 'ml', brandId: '', brandText: '自製 2:1 糖漿', abv: 0 }
+        ],
+        steps: [
+          '搖酒器中加入白蘭姆酒、現榨青檸汁與糖漿。',
+          '裝滿硬質方形冰塊，用力有節奏地搖盪 12 秒至搖酒器外壁結霜。',
+          '使用雙重濾網 (Double Strain) 將酒液細緻濾入冰透的 Coupe 杯中。',
+          '置放一枚薄切青檸輪片於酒液表面。'
+        ],
+        image: 'https://images.unsplash.com/photo-1517456793572-1d8efd6dc135?auto=format&fit=crop&w=900&q=80',
+        likes: 110,
+        isLiked: false,
+        isFav: false,
+        createdAt: 1700000300000
+      }
+    ];
+
+    /**
+     * STREAMING_CHUNK:Managing application state variables
+     */
+    let recipes = [];
+    let currentCategory = 'all';
+    let currentFlavor = 'all';
+    let currentAbvFilter = 'all';
+    let searchQuery = '';
+    let currentSort = 'likes';
+    let onlyFavorites = false;
+    let uploadedImageBase64 = null;
+    let selectedFormFlavors = new Set();
+    let currentDetailRecipeId = null;
+
+    /**
+     * STREAMING_CHUNK:Initializing state from localStorage or seed cocktails
+     */
+    function initApp() {
+      const stored = localStorage.getItem('barcraft_recipes_v2');
+      if (stored) {
+        try {
+          recipes = JSON.parse(stored);
+        } catch (e) {
+          recipes = [...DEFAULT_RECIPES];
+        }
+      } else {
+        recipes = [...DEFAULT_RECIPES];
+        saveRecipesToStorage();
+      }
+
+      renderFlavorFilterPills();
+      initFormFlavorSelector();
+      renderRecipes();
+    }
+
+    function saveRecipesToStorage() {
+      localStorage.setItem('barcraft_recipes_v2', JSON.stringify(recipes));
+    }
+
+    /**
+     * STREAMING_CHUNK:Rendering dynamic flavor profile filter pills
+     */
+    function renderFlavorFilterPills() {
+      const container = document.getElementById('flavorFilterContainer');
+      let html = `
+        <button onclick="setFlavorFilter('all')" class="flavor-pill px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${currentFlavor === 'all' ? 'bg-amber-500 text-speakeasy-950 shadow-md' : 'bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5'}">
+          全部風味
+        </button>
+      `;
+
+      TAXONOMY.flavors.forEach(f => {
+        const isActive = currentFlavor === f.id;
+        html += `
+          <button onclick="setFlavorFilter('${f.id}')" class="flavor-pill px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${isActive ? 'bg-amber-500 text-speakeasy-950 font-bold shadow-md' : 'bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5'}">
+            <i class="fa-solid ${f.icon} text-[10px]"></i>
+            <span>${f.primaryZh.slice(0, 2)}</span>
+          </button>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    /**
+     * STREAMING_CHUNK:Initializing interactive flavor selector in Add modal
+     */
+    function initFormFlavorSelector() {
+      const container = document.getElementById('formFlavorSelector');
+      container.innerHTML = TAXONOMY.flavors.map(f => {
+        const isSelected = selectedFormFlavors.has(f.id);
+        return `
+          <button 
+            type="button"
+            onclick="toggleFormFlavor('${f.id}')"
+            class="px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer ${isSelected ? 'bg-amber-500 text-speakeasy-950 font-bold shadow-md shadow-amber-500/20' : 'bg-speakeasy-900 hover:bg-speakeasy-800 text-slate-300 border border-white/10'}">
+            <i class="fa-solid ${f.icon} text-[10px]"></i>
+            <span>${f.primaryZh}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleFormFlavor(flavorId) {
+      if (selectedFormFlavors.has(flavorId)) {
+        selectedFormFlavors.delete(flavorId);
+      } else {
+        selectedFormFlavors.add(flavorId);
+      }
+      initFormFlavorSelector();
+    }
+
+    /**
+     * STREAMING_CHUNK:Handling keyword expansion and multi-criteria recipe filtering
+     */
+    function expandSearchKeywords(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return [];
+      const keywords = new Set([q]);
+
+      TAXONOMY.flavors.forEach(f => {
+        if (f.aliases.some(a => a.toLowerCase().includes(q) || q.includes(a.toLowerCase()))) {
+          keywords.add(f.id);
+          keywords.add(f.primaryEn.toLowerCase());
+          f.aliases.forEach(a => keywords.add(a.toLowerCase()));
+        }
+      });
+
+      TAXONOMY.brands.forEach(b => {
+        if (b.aliases.some(a => a.toLowerCase().includes(q) || q.includes(a.toLowerCase()))) {
+          keywords.add(b.id);
+          keywords.add(b.primaryEn.toLowerCase());
+          keywords.add(b.primaryZh.toLowerCase());
+          b.aliases.forEach(a => keywords.add(a.toLowerCase()));
+        }
+      });
+
+      return Array.from(keywords);
+    }
+
+    function recipeMatchesQuery(recipe, expandedTerms) {
+      const fullText = [
+        recipe.nameZh,
+        recipe.nameEn,
+        recipe.base,
+        recipe.method,
+        recipe.glass,
+        recipe.ice,
+        recipe.garnish,
+        recipe.desc,
+        recipe.author,
+        ...(recipe.flavors || []),
+        ...(recipe.ingredients || []).map(i => `${i.name} ${i.brandText || ''} ${i.brandId || ''}`)
+      ].join(' ').toLowerCase();
+
+      return expandedTerms.some(term => fullText.includes(term));
+    }
+
+    /**
+     * STREAMING_CHUNK:Filtering and sorting recipe dataset
+     */
+    function renderRecipes() {
+      const grid = document.getElementById('recipesGrid');
+      const emptyState = document.getElementById('emptyState');
+      const countLabel = document.getElementById('recipeCountLabel');
+
+      let filtered = recipes.filter(item => {
+        if (currentCategory !== 'all' && item.base !== currentCategory) return false;
+        if (currentFlavor !== 'all') {
+          const itemFlavors = item.flavors || [];
+          if (!itemFlavors.includes(currentFlavor)) return false;
+        }
+        if (currentAbvFilter !== 'all') {
+          const abvData = calculateRecipeABV(item);
+          if (abvData.strengthLevel !== currentAbvFilter) return false;
+        }
+        if (onlyFavorites && !item.isFav) return false;
+        if (searchQuery.trim() !== '') {
+          const expanded = expandSearchKeywords(searchQuery);
+          if (!recipeMatchesQuery(item, expanded)) return false;
+        }
+        return true;
+      });
+
+      // Sorting
+      filtered.sort((a, b) => {
+        if (currentSort === 'likes') return (b.likes || 0) - (a.likes || 0);
+        if (currentSort === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+        if (currentSort === 'name') return (a.nameZh || '').localeCompare(b.nameZh || '', 'zh-TW');
+        if (currentSort === 'abv_desc') return calculateRecipeABV(b).abv - calculateRecipeABV(a).abv;
+        if (currentSort === 'abv_asc') return calculateRecipeABV(a).abv - calculateRecipeABV(b).abv;
+        return 0;
+      });
+
+      countLabel.textContent = `共 ${filtered.length} 款酒譜`;
+      updateActiveFilterUI();
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        grid.innerHTML = filtered.map(r => createCardHTML(r)).join('');
+      }
+    }
+
+    /**
+     * STREAMING_CHUNK:Generating HTML for individual cocktail cards
+     */
+    function createCardHTML(recipe) {
+      const isLiked = !!recipe.isLiked;
+      const isFav = !!recipe.isFav;
+      const abvData = calculateRecipeABV(recipe);
+
+      const branded = (recipe.ingredients || []).filter(i => i.brandText && i.brandText.trim());
+
+      const flavorPills = (recipe.flavors || []).map(fId => {
+        const found = TAXONOMY.flavors.find(t => t.id === fId);
+        const name = found ? found.primaryZh.slice(0, 4) : fId;
+        const icon = found ? found.icon : 'fa-tag';
+        return `
+          <span 
+            onclick="event.stopPropagation(); setFlavorFilter('${fId}')"
+            class="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 border border-amber-500/20 transition-colors"
+            title="點擊依此風味篩選">
+            <i class="fa-solid ${icon} text-[8px]"></i>
+            <span>${name}</span>
+          </span>
+        `;
+      }).join('');
+
+      return `
+        <div class="group relative bg-speakeasy-900 border border-white/10 hover:border-amber-500/50 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 flex flex-col cursor-pointer" onclick="openDetailModal('${recipe.id}')">
+          <!-- Card Top Image -->
+          <div class="relative h-52 sm:h-56 w-full overflow-hidden bg-speakeasy-950">
+            <img 
+              src="${recipe.image || 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail'}" 
+              alt="${recipe.nameZh}" 
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              onerror="this.src='https://placehold.co/600x400/181b24/f59e0b?text=Cocktail'"
+            >
+            <div class="absolute inset-0 bg-gradient-to-t from-speakeasy-900 via-transparent to-black/30"></div>
+            
+            <!-- Top Badges: Base & Calculated ABV -->
+            <div class="absolute top-3.5 left-3.5 flex items-center gap-1.5 flex-wrap">
+              <span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-500 text-speakeasy-950 shadow-md">
+                ${recipe.base}
+              </span>
+              <span class="px-2 py-1 rounded-lg text-[11px] font-mono font-bold ${abvData.strengthColor} backdrop-blur shadow-md" title="融水稀釋模型預估酒精濃度">
+                ~${abvData.abv}% ABV
+              </span>
+            </div>
+
+            <!-- Favorite Button -->
+            <button 
+              onclick="event.stopPropagation(); toggleFavorite('${recipe.id}')" 
+              class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full ${isFav ? 'bg-amber-500 text-speakeasy-950' : 'bg-speakeasy-950/70 text-slate-300 hover:text-white'} flex items-center justify-center backdrop-blur transition-all border border-white/15"
+              title="${isFav ? '已收藏' : '加入收藏'}">
+              <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-bookmark text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Card Content Body -->
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-baseline justify-between gap-2 mb-1">
+                <h3 class="text-lg font-serif font-bold text-white group-hover:text-amber-400 transition-colors line-clamp-1">
+                  ${recipe.nameZh}
+                </h3>
+                <span class="text-[11px] text-slate-400 italic font-serif line-clamp-1">
+                  ${recipe.nameEn || ''}
+                </span>
+              </div>
+
+              <!-- Flavor Pills -->
+              ${flavorPills ? `<div class="flex flex-wrap gap-1.5 mb-2.5">${flavorPills}</div>` : ''}
+
+              <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-3">
+                ${recipe.desc || '經典優雅的調酒配方，風味層次分明。'}
+              </p>
+
+              <!-- Branded Ingredients Preview Badges -->
+              ${branded.length > 0 ? `
+                <div class="pt-2 border-t border-white/5">
+                  <div class="text-[10px] text-slate-400 mb-1 flex items-center gap-1">
+                    <i class="fa-solid fa-award text-amber-500"></i>
+                    <span>指定品牌材料：</span>
+                  </div>
+                  <div class="flex flex-wrap gap-1">
+                    ${branded.map(b => `
+                      <span class="px-2 py-0.5 rounded-md text-[10px] bg-white/5 border border-white/10 text-amber-300/90 font-medium">
+                        ${b.brandText}
+                      </span>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Card Bottom Bar -->
+            <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs text-slate-400">
+              <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                <i class="fa-solid fa-martini-glass text-slate-400 text-[10px]"></i>
+                <span>${recipe.method ? recipe.method.split(' ')[0] : '調製法'}</span>
+              </span>
+
+              <button 
+                onclick="event.stopPropagation(); toggleLike('${recipe.id}')"
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${isLiked ? 'text-rose-400 bg-rose-500/10' : 'text-slate-400 hover:text-rose-400 hover:bg-white/5'} transition-all">
+                <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart text-xs"></i>
+                <span class="font-mono text-xs">${recipe.likes || 0}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    /**
+     * STREAMING_CHUNK:Opening recipe details modal and populating calculated metrics
+     */
+    function openDetailModal(recipeId) {
+      const recipe = recipes.find(r => r.id === recipeId);
+      if (!recipe) return;
+      currentDetailRecipeId = recipeId;
+
+      renderDetailView(recipe);
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+
+    function renderDetailView(recipe, activeMethod = null) {
+      const effective = { ...recipe };
+      if (activeMethod) effective.method = activeMethod;
+
+      const abvData = calculateRecipeABV(effective);
+
+      document.getElementById('detailImg').src = recipe.image || 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail';
+      document.getElementById('detailTitle').textContent = recipe.nameZh;
+      document.getElementById('detailSubtitle').textContent = recipe.nameEn || '';
+      document.getElementById('detailBaseTag').textContent = recipe.base;
+      document.getElementById('detailMethodTag').textContent = effective.method || '調製法';
+      
+      const abvBadge = document.getElementById('detailAbvBadge');
+      abvBadge.textContent = `~${abvData.abv}% ABV`;
+      abvBadge.className = `px-2.5 py-0.5 rounded-md text-xs font-mono font-bold border ${abvData.strengthColor}`;
+
+      document.getElementById('detailAbvValue').textContent = `${abvData.abv}%`;
+      document.getElementById('detailDilutionRate').textContent = `+${abvData.dilutionRate}%`;
+      document.getElementById('detailPureAlcohol').textContent = `${abvData.pureAlcoholMl} ml`;
+      document.getElementById('detailTotalVolume').textContent = `${abvData.dilutedMl} ml`;
+
+      const strengthText = document.getElementById('detailAbvStrengthText');
+      strengthText.textContent = abvData.strengthLabel;
+      strengthText.className = `text-xs font-bold px-2.5 py-0.5 rounded-full ${abvData.strengthColor}`;
+
+      // Standard Drink: 1 Standard Drink = 10g pure alcohol
+      const pureAlcoholGrams = abvData.pureAlcoholMl * 0.8;
+      const standardDrinks = Math.round((pureAlcoholGrams / 10) * 10) / 10;
+      const beerCans = Math.round((abvData.pureAlcoholMl / 16.5) * 10) / 10;
+
+      document.getElementById('detailStandardDrink').textContent = `${standardDrinks} 單位 (${Math.round(pureAlcoholGrams * 10) / 10}g)`;
+      document.getElementById('detailBeerEquivalent').textContent = `(相當於 ${beerCans} 罐 330ml 啤酒)`;
+
+      document.getElementById('barAlcohol').style.width = `${abvData.alcoholPct}%`;
+      document.getElementById('barMixers').style.width = `${abvData.mixersPct}%`;
+      document.getElementById('barDilution').style.width = `${abvData.dilutionPct}%`;
+      document.getElementById('detailCompositionStats').textContent = `純酒精 ${abvData.pureAlcoholMl}ml | 水份 ${abvData.mixersMl}ml | 融冰 ${abvData.dilutionWaterMl}ml`;
+
+      // Update simulator buttons active state
+      const currentMethod = (effective.method || '').toLowerCase();
+      document.querySelectorAll('#detailMethodSimulatorButtons .sim-method-btn').forEach(btn => {
+        const text = btn.textContent.toLowerCase();
+        if ((currentMethod.includes('shake') && text.includes('shake')) ||
+            (currentMethod.includes('stir') && text.includes('stir')) ||
+            (currentMethod.includes('build') && text.includes('build')) ||
+            (currentMethod.includes('blend') && text.includes('blend')) ||
+            (currentMethod.includes('layer') && text.includes('layer'))) {
+          btn.className = "sim-method-btn px-2 py-1 rounded-lg text-[10px] font-bold border border-amber-500 bg-amber-500/20 text-amber-300 transition-all";
+        } else {
+          btn.className = "sim-method-btn px-2 py-1 rounded-lg text-[10px] border border-white/10 hover:border-amber-500/50 bg-speakeasy-900 text-slate-300 transition-all";
+        }
+      });
+
+      document.getElementById('detailDesc').textContent = recipe.desc || '暫無風味詳細描述。';
+      document.getElementById('detailAuthor').innerHTML = `<i class="fa-solid fa-user-pen mr-1"></i> 配方提供：${recipe.author || 'BarCraft 調酒師'}`;
+
+      document.getElementById('detailGlass').textContent = recipe.glass || '標準調酒杯';
+      document.getElementById('detailIce').textContent = recipe.ice || '方形冰塊';
+      document.getElementById('detailGarnish').textContent = recipe.garnish || '適量裝飾';
+
+      // Flavors
+      const flavorsBox = document.getElementById('detailFlavorsContainer');
+      if (recipe.flavors && recipe.flavors.length > 0) {
+        flavorsBox.innerHTML = recipe.flavors.map(fId => {
+          const found = TAXONOMY.flavors.find(t => t.id === fId);
+          return `
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium">
+              <i class="fa-solid ${found ? found.icon : 'fa-tag'} text-xs"></i>
+              <span>${found ? found.primaryZh : fId}</span>
+            </span>
+          `;
+        }).join('');
+      } else {
+        flavorsBox.innerHTML = '<span class="text-xs text-slate-500">未特別指定風味</span>';
+      }
+
+      // Ingredients
+      const ingBox = document.getElementById('detailIngredients');
+      ingBox.innerHTML = (recipe.ingredients || []).map(ing => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-speakeasy-850/60 border border-white/5 text-xs sm:text-sm">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-dot text-[8px] text-amber-500"></i>
+            <span class="font-medium text-white">${ing.name}</span>
+            ${ing.brandText ? `
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                <i class="fa-solid fa-tag text-[8px]"></i>
+                <span>${ing.brandText}</span>
+              </span>
+            ` : ''}
+          </div>
+          <div class="font-mono text-slate-300">
+            ${ing.amount} ${ing.unit || ''}
+          </div>
+        </div>
+      `).join('');
+
+      // Steps
+      const stepsBox = document.getElementById('detailSteps');
+      stepsBox.innerHTML = (recipe.steps || []).map(s => `
+        <li class="pl-1">${s}</li>
+      `).join('');
+
+      // Like & Fav buttons in modal
+      const likeBtn = document.getElementById('modalLikeBtn');
+      const likeCount = document.getElementById('modalLikeCount');
+      likeCount.textContent = recipe.likes || 0;
+      likeBtn.className = recipe.isLiked 
+        ? "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-colors"
+        : "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-speakeasy-800 hover:bg-speakeasy-750 text-slate-300 transition-colors";
+
+      const favBtn = document.getElementById('modalFavBtn');
+      const favText = document.getElementById('modalFavText');
+      favText.textContent = recipe.isFav ? '已收藏' : '收藏';
+      favBtn.className = recipe.isFav 
+        ? "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-speakeasy-950 font-bold transition-colors"
+        : "flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-speakeasy-800 hover:bg-speakeasy-750 text-slate-300 transition-colors";
+    }
+
+    function simulateDetailTechnique(techniqueName) {
+      if (!currentDetailRecipeId) return;
+      const recipe = recipes.find(r => r.id === currentDetailRecipeId);
+      if (!recipe) return;
+      renderDetailView(recipe, techniqueName);
+    }
+
+    function resetDetailMethodSimulator() {
+      if (!currentDetailRecipeId) return;
+      const recipe = recipes.find(r => r.id === currentDetailRecipeId);
+      if (!recipe) return;
+      renderDetailView(recipe, null);
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.add('hidden');
+      currentDetailRecipeId = null;
+    }
+
+    /**
+     * STREAMING_CHUNK:Managing ingredient rows inside Add Recipe form
+     */
+    let ingredientRowCounter = 0;
+
+    function addIngredientRow(name = '', amount = '', unit = 'ml', brand = '', abv = null) {
+      ingredientRowCounter++;
+      const rowId = `ing_row_${ingredientRowCounter}`;
+      const container = document.getElementById('ingredientRowsContainer');
+
+      const detectedAbv = abv !== null ? abv : detectDefaultIngredientAbv(name, brand);
+
+      const rowHtml = `
+        <div id="${rowId}" class="grid grid-cols-1 sm:grid-cols-12 gap-2 p-2.5 rounded-2xl bg-speakeasy-950/80 border border-white/5 relative items-center">
+          <!-- Material Name Input -->
+          <div class="sm:col-span-4 relative">
+            <input 
+              type="text" 
+              placeholder="材料名稱 (如: 琴酒)" 
+              value="${name}"
+              oninput="handleIngredientNameChange('${rowId}')"
+              required
+              class="ing-name w-full bg-speakeasy-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+            >
+          </div>
+
+          <!-- Brand Autocomplete Input -->
+          <div class="sm:col-span-3 relative">
+            <input 
+              type="text" 
+              placeholder="指定品牌 (選填)" 
+              value="${brand}"
+              oninput="handleBrandInput('${rowId}')"
+              class="ing-brand w-full bg-speakeasy-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-amber-300 focus:outline-none focus:border-amber-500"
+              autocomplete="off"
+            >
+            <div id="${rowId}_brandDropdown" class="hidden absolute left-0 top-full mt-1 w-64 bg-speakeasy-900 border border-white/15 rounded-xl shadow-2xl z-30 max-h-48 overflow-y-auto"></div>
+          </div>
+
+          <!-- Dosage Amount -->
+          <div class="sm:col-span-2">
+            <input 
+              type="text" 
+              placeholder="份量" 
+              value="${amount}"
+              oninput="triggerLiveAbvCalculation()"
+              required
+              class="ing-amount w-full bg-speakeasy-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 text-center"
+            >
+          </div>
+
+          <!-- Unit Selector -->
+          <div class="sm:col-span-1">
+            <select onchange="triggerLiveAbvCalculation()" class="ing-unit w-full bg-speakeasy-900 border border-white/10 rounded-xl px-1 py-1.5 text-[11px] text-white focus:outline-none focus:border-amber-500">
+              <option value="ml" ${unit === 'ml' ? 'selected' : ''}>ml</option>
+              <option value="oz" ${unit === 'oz' ? 'selected' : ''}>oz</option>
+              <option value="dashes" ${unit === 'dashes' ? 'selected' : ''}>滴</option>
+              <option value="bar spoon" ${unit === 'bar spoon' ? 'selected' : ''}>匙</option>
+              <option value="補滿" ${unit === '補滿' ? 'selected' : ''}>補滿</option>
+            </select>
+          </div>
+
+          <!-- ABV micro input -->
+          <div class="sm:col-span-1">
+            <input 
+              type="number" 
+              step="0.1" 
+              min="0" 
+              max="100" 
+              placeholder="%" 
+              value="${detectedAbv}"
+              oninput="triggerLiveAbvCalculation()"
+              class="ing-abv w-full bg-speakeasy-900 border border-white/10 rounded-xl px-1.5 py-1.5 text-[11px] text-amber-400 focus:outline-none focus:border-amber-500 text-center font-mono"
+              title="材料酒精濃度 (%)"
+            >
+          </div>
+
+          <!-- Delete Row -->
+          <div class="sm:col-span-1 text-center">
+            <button type="button" onclick="removeIngredientRow('${rowId}')" class="text-slate-500 hover:text-rose-400 p-1 text-xs transition-colors">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', rowHtml);
+      triggerLiveAbvCalculation();
+    }
+
+    function removeIngredientRow(rowId) {
+      const row = document.getElementById(rowId);
+      if (row) {
+        row.remove();
+        triggerLiveAbvCalculation();
+      }
+    }
+
+    function handleIngredientNameChange(rowId) {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      const name = row.querySelector('.ing-name')?.value || '';
+      const brand = row.querySelector('.ing-brand')?.value || '';
+      const abvInput = row.querySelector('.ing-abv');
+
+      if (abvInput && !abvInput.dataset.userModified) {
+        abvInput.value = detectDefaultIngredientAbv(name, brand);
+      }
+      triggerLiveAbvCalculation();
+    }
+
+    /**
+     * STREAMING_CHUNK:Handling dynamic brand suggestions dropdown
+     */
+    function handleBrandInput(rowId) {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      const input = row.querySelector('.ing-brand');
+      const query = input.value.trim().toLowerCase();
+      const dropdown = document.getElementById(`${rowId}_brandDropdown`);
+
+      if (!query) {
+        dropdown.classList.add('hidden');
+        input.dataset.brandId = '';
+        triggerLiveAbvCalculation();
+        return;
+      }
+
+      const matches = TAXONOMY.brands.filter(b => 
+        b.primaryEn.toLowerCase().includes(query) ||
+        b.primaryZh.toLowerCase().includes(query) ||
+        b.aliases.some(a => a.toLowerCase().includes(query))
+      );
+
+      if (matches.length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      dropdown.innerHTML = matches.map(brand => `
+        <div 
+          onclick="selectBrandTag('${rowId}', '${brand.id}', '${brand.primaryEn}', ${brand.abv})" 
+          class="p-2.5 hover:bg-amber-500/20 cursor-pointer border-b border-white/5 last:border-0 transition-colors">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-amber-300">${brand.primaryEn}</span>
+            <span class="text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded font-mono">${brand.abv}% ABV</span>
+          </div>
+          <div class="text-[10px] text-slate-400 mt-0.5">${brand.primaryZh}</div>
+        </div>
+      `).join('');
+
+      dropdown.classList.remove('hidden');
+    }
+
+    function selectBrandTag(rowId, brandId, brandText, brandAbv) {
+      const row = document.getElementById(rowId);
+      if (!row) return;
+      const brandInput = row.querySelector('.ing-brand');
+      brandInput.value = brandText;
+      brandInput.dataset.brandId = brandId;
+      
+      const abvInput = row.querySelector('.ing-abv');
+      if (abvInput && typeof brandAbv === 'number') {
+        abvInput.value = brandAbv;
+        abvInput.dataset.userModified = 'true';
+      }
+
+      document.getElementById(`${rowId}_brandDropdown`).classList.add('hidden');
+      triggerLiveAbvCalculation();
+    }
+
+    /**
+     * STREAMING_CHUNK:Updating live ABV calculation in real time
+     */
+    function triggerLiveAbvCalculation() {
+      const method = document.getElementById('inputMethod')?.value || 'Stir';
+      const base = document.getElementById('inputBase')?.value || 'Gin';
+      const rows = document.querySelectorAll('#ingredientRowsContainer > div');
+
+      const tempIngredients = [];
+      rows.forEach(row => {
+        const name = row.querySelector('.ing-name')?.value.trim() || '';
+        const amount = row.querySelector('.ing-amount')?.value.trim() || '';
+        const unit = row.querySelector('.ing-unit')?.value || 'ml';
+        const brandInput = row.querySelector('.ing-brand');
+        const abvInput = row.querySelector('.ing-abv');
+        const brandId = brandInput ? brandInput.dataset.brandId : '';
+        const brandText = brandInput ? brandInput.value.trim() : '';
+        const abv = abvInput && abvInput.value !== '' ? parseFloat(abvInput.value) : null;
+
+        if (amount) {
+          tempIngredients.push({ name, amount, unit, brandId, brandText, abv });
+        }
+      });
+
+      const abvData = calculateRecipeABV({
+        base,
+        method,
+        ingredients: tempIngredients
+      });
+
+      const liveAbvNumber = document.getElementById('liveAbvNumber');
+      const liveAbvBadge = document.getElementById('liveAbvBadge');
+      const liveAbvDetails = document.getElementById('liveAbvDetails');
+      const liveBarAlcohol = document.getElementById('liveBarAlcohol');
+      const liveBarMixers = document.getElementById('liveBarMixers');
+      const liveBarDilution = document.getElementById('liveBarDilution');
+
+      if (liveAbvNumber && liveAbvBadge && liveAbvDetails) {
+        liveAbvNumber.textContent = `${abvData.abv}%`;
+        liveAbvBadge.textContent = abvData.strengthLabel;
+        liveAbvBadge.className = `text-[10px] font-bold px-2 py-0.5 rounded-full border ${abvData.strengthColor}`;
+        liveAbvDetails.textContent = `純酒精 ${abvData.pureAlcoholMl} ml · 融水 +${abvData.dilutionRate}% (${abvData.dilutionWaterMl}ml) · 預估出酒量 ~${abvData.dilutedMl} ml`;
+      }
+
+      if (liveBarAlcohol && liveBarMixers && liveBarDilution) {
+        liveBarAlcohol.style.width = `${abvData.alcoholPct}%`;
+        liveBarMixers.style.width = `${abvData.mixersPct}%`;
+        liveBarDilution.style.width = `${abvData.dilutionPct}%`;
+      }
+    }
+
+    /**
+     * STREAMING_CHUNK:Managing step rows inside Add Recipe form
+     */
+    function addStepRow(text = '') {
+      const container = document.getElementById('stepRowsContainer');
+      const stepIndex = container.children.length + 1;
+      const rowId = `step_${Date.now()}_${stepIndex}`;
+
+      const rowHtml = `
+        <div id="${rowId}" class="flex items-start gap-2">
+          <span class="text-xs font-mono font-bold text-amber-500 mt-2.5 w-5 text-right">${stepIndex}.</span>
+          <textarea rows="1" placeholder="填寫調製步驟..." class="flex-1 bg-speakeasy-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">${text}</textarea>
+          <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-slate-500 hover:text-rose-400 p-2 text-xs transition-colors">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', rowHtml);
+    }
+
+    /**
+     * STREAMING_CHUNK:Handling image uploads with FileReader
+     */
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedImageBase64 = event.target.result;
+        const preview = document.getElementById('imagePreview');
+        const icon = document.getElementById('previewPlaceholderIcon');
+        const text = document.getElementById('previewPlaceholderText');
+
+        preview.src = uploadedImageBase64;
+        preview.classList.remove('hidden');
+        if (icon) icon.classList.add('hidden');
+        if (text) text.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * STREAMING_CHUNK:Submitting new recipe form and updating state
+     */
+    document.getElementById('addRecipeForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const nameZh = document.getElementById('inputNameZh').value.trim();
+      const nameEn = document.getElementById('inputNameEn').value.trim();
+      const base = document.getElementById('inputBase').value;
+      const method = document.getElementById('inputMethod').value;
+      const author = document.getElementById('inputAuthor').value.trim() || 'BarCraft 調酒師';
+      const glass = document.getElementById('inputGlass').value.trim() || '標準調酒杯';
+      const ice = document.getElementById('inputIce').value.trim() || '方形冰塊';
+      const garnish = document.getElementById('inputGarnish').value.trim() || '適量裝飾';
+      const desc = document.getElementById('inputDesc').value.trim();
+
+      const ingredients = [];
+      const ingRows = document.querySelectorAll('#ingredientRowsContainer > div');
+      ingRows.forEach(row => {
+        const name = row.querySelector('.ing-name')?.value.trim();
+        const amount = row.querySelector('.ing-amount')?.value.trim();
+        const unit = row.querySelector('.ing-unit')?.value || 'ml';
+        const brandInput = row.querySelector('.ing-brand');
+        const abvInput = row.querySelector('.ing-abv');
+
+        if (name && amount) {
+          ingredients.push({
+            name,
+            amount,
+            unit,
+            brandId: brandInput?.dataset.brandId || '',
+            brandText: brandInput?.value.trim() || '',
+            abv: abvInput && abvInput.value !== '' ? parseFloat(abvInput.value) : null
+          });
+        }
+      });
+
+      if (ingredients.length === 0) {
+        showToast('請至少填寫一項調酒材料！', 'fa-triangle-exclamation');
+        return;
+      }
+
+      const steps = [];
+      document.querySelectorAll('#stepRowsContainer textarea').forEach(txt => {
+        if (txt.value.trim()) steps.push(txt.value.trim());
+      });
+
+      const calculatedAbvData = calculateRecipeABV({ base, method, ingredients });
+
+      const newRecipe = {
+        id: 'recipe_' + Date.now(),
+        nameZh,
+        nameEn,
+        base,
+        method,
+        author,
+        glass,
+        ice,
+        garnish,
+        desc,
+        ingredients,
+        steps: steps.length > 0 ? steps : ['將所有材料依照技法調製後倒入杯中即完成。'],
+        flavors: Array.from(selectedFormFlavors),
+        calculatedAbv: calculatedAbvData.abv,
+        strengthLevel: calculatedAbvData.strengthLevel,
+        image: uploadedImageBase64 || 'https://placehold.co/600x400/181b24/f59e0b?text=' + encodeURIComponent(nameZh),
+        likes: 0,
+        isLiked: false,
+        isFav: false,
+        createdAt: Date.now()
+      };
+
+      recipes.unshift(newRecipe);
+      saveRecipesToStorage();
+      closeAddModal();
+      resetForm();
+      renderRecipes();
+      showToast('成功發布新酒譜！', 'fa-circle-check');
+    });
+
+    function resetForm() {
+      document.getElementById('addRecipeForm').reset();
+      document.getElementById('ingredientRowsContainer').innerHTML = '';
+      document.getElementById('stepRowsContainer').innerHTML = '';
+      uploadedImageBase64 = null;
+      selectedFormFlavors.clear();
+      initFormFlavorSelector();
+
+      const preview = document.getElementById('imagePreview');
+      preview.src = '';
+      preview.classList.add('hidden');
+      document.getElementById('previewPlaceholderIcon')?.classList.remove('hidden');
+      document.getElementById('previewPlaceholderText')?.classList.remove('hidden');
+    }
+
+    function openAddModal() {
+      document.getElementById('addModal').classList.remove('hidden');
+      selectedFormFlavors.clear();
+      selectedFormFlavors.add('flavor_sour');
+      initFormFlavorSelector();
+
+      const container = document.getElementById('ingredientRowsContainer');
+      if (container.children.length === 0) {
+        addIngredientRow('琴酒 (Gin)', '45', 'ml', 'Tanqueray No. 10');
+        addIngredientRow('通寧水', '120', 'ml', '');
+      }
+      const stepsContainer = document.getElementById('stepRowsContainer');
+      if (stepsContainer.children.length === 0) {
+        addStepRow('杯中放入純淨冰塊。');
+        addStepRow('依序倒入材料並輕柔攪拌混合。');
+      }
+      setTimeout(triggerLiveAbvCalculation, 50);
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.add('hidden');
+    }
+
+    /**
+     * STREAMING_CHUNK:Implementing like and bookmarking actions
+     */
+    function toggleLike(id) {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+      recipe.isLiked = !recipe.isLiked;
+      recipe.likes = (recipe.likes || 0) + (recipe.isLiked ? 1 : -1);
+      saveRecipesToStorage();
+      renderRecipes();
+      if (currentDetailRecipeId === id) renderDetailView(recipe);
+    }
+
+    function toggleFavorite(id) {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+      recipe.isFav = !recipe.isFav;
+      saveRecipesToStorage();
+      renderRecipes();
+      if (currentDetailRecipeId === id) renderDetailView(recipe);
+      showToast(recipe.isFav ? '已加入我的收藏' : '已從收藏中移除', 'fa-bookmark');
+    }
+
+    function toggleModalLike() {
+      if (currentDetailRecipeId) toggleLike(currentDetailRecipeId);
+    }
+
+    function toggleModalFavorite() {
+      if (currentDetailRecipeId) toggleFavorite(currentDetailRecipeId);
+    }
+
+    function toggleFavoritesOnly() {
+      onlyFavorites = !onlyFavorites;
+      const btn = document.getElementById('toggleFavoritesBtn');
+      if (onlyFavorites) {
+        btn.classList.remove('bg-speakeasy-850', 'text-slate-300');
+        btn.classList.add('bg-amber-500', 'text-speakeasy-950', 'font-bold');
+      } else {
+        btn.classList.add('bg-speakeasy-850', 'text-slate-300');
+        btn.classList.remove('bg-amber-500', 'text-speakeasy-950', 'font-bold');
+      }
+      renderRecipes();
+    }
+
+    /**
+     * STREAMING_CHUNK:Managing filter states and reset mechanisms
+     */
+    function setCategory(category, buttonEl) {
+      currentCategory = category;
+      const buttons = document.querySelectorAll('#categoryFilterContainer .category-pill');
+      buttons.forEach(btn => {
+        btn.className = "category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5";
+      });
+      if (buttonEl) {
+        buttonEl.className = "category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-amber-500 text-speakeasy-950 shadow-md shadow-amber-500/20";
+      }
+      renderRecipes();
+    }
+
+    function setFlavorFilter(flavorId) {
+      currentFlavor = flavorId;
+      renderFlavorFilterPills();
+      renderRecipes();
+    }
+
+    function setAbvFilter(level, buttonEl) {
+      currentAbvFilter = level;
+      const buttons = document.querySelectorAll('#abvFilterContainer .abv-pill');
+      buttons.forEach(btn => {
+        btn.className = "abv-pill px-3 py-1.5 rounded-xl transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5 whitespace-nowrap";
+      });
+      if (buttonEl) {
+        buttonEl.className = "abv-pill px-3 py-1.5 rounded-xl transition-all bg-amber-500 text-speakeasy-950 font-bold whitespace-nowrap";
+      }
+      renderRecipes();
+    }
+
+    function handleSearchInput(val) {
+      searchQuery = val;
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (searchQuery.trim()) {
+        clearBtn?.classList.remove('hidden');
+      } else {
+        clearBtn?.classList.add('hidden');
+      }
+      renderRecipes();
+    }
+
+    function clearSearch() {
+      searchQuery = '';
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('mobileSearchInput').value = '';
+      document.getElementById('clearSearchBtn')?.classList.add('hidden');
+      renderRecipes();
+    }
+
+    function applySorting(sortVal) {
+      currentSort = sortVal;
+      renderRecipes();
+    }
+
+    function resetAllFilters() {
+      searchQuery = '';
+      currentCategory = 'all';
+      currentFlavor = 'all';
+      currentAbvFilter = 'all';
+      onlyFavorites = false;
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('mobileSearchInput').value = '';
+      document.getElementById('clearSearchBtn')?.classList.add('hidden');
+      
+      const favBtn = document.getElementById('toggleFavoritesBtn');
+      favBtn.classList.add('bg-speakeasy-850', 'text-slate-300');
+      favBtn.classList.remove('bg-amber-500', 'text-speakeasy-950', 'font-bold');
+
+      const catButtons = document.querySelectorAll('#categoryFilterContainer .category-pill');
+      catButtons.forEach((btn, idx) => {
+        btn.className = idx === 0 
+          ? "category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all bg-amber-500 text-speakeasy-950 shadow-md shadow-amber-500/20"
+          : "category-pill px-4 py-2 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 hover:text-white border border-white/5";
+      });
+
+      const abvButtons = document.querySelectorAll('#abvFilterContainer .abv-pill');
+      abvButtons.forEach((btn, idx) => {
+        btn.className = idx === 0 
+          ? "abv-pill px-3 py-1.5 rounded-xl transition-all bg-amber-500 text-speakeasy-950 font-bold whitespace-nowrap"
+          : "abv-pill px-3 py-1.5 rounded-xl transition-all bg-speakeasy-850 hover:bg-speakeasy-800 text-slate-300 border border-white/5 whitespace-nowrap";
+      });
+
+      renderFlavorFilterPills();
+      renderRecipes();
+    }
+
+    function updateActiveFilterUI() {
+      const container = document.getElementById('activeFilterTags');
+      const list = document.getElementById('filterTagList');
+
+      if (!searchQuery.trim() && currentCategory === 'all' && currentFlavor === 'all' && currentAbvFilter === 'all' && !onlyFavorites) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      const tags = [];
+      if (searchQuery.trim()) {
+        const expanded = expandSearchKeywords(searchQuery);
+        tags.push(`關鍵字: "${searchQuery}" <span class="text-[10px] text-amber-400 font-normal ml-1">(${Math.min(expanded.length, 4)}組關聯)</span>`);
+      }
+      if (currentCategory !== 'all') tags.push(`基酒: ${currentCategory}`);
+      if (currentFlavor !== 'all') {
+        const f = TAXONOMY.flavors.find(item => item.id === currentFlavor);
+        tags.push(`風味: ${f ? f.primaryZh : currentFlavor}`);
+      }
+      if (currentAbvFilter !== 'all') {
+        const labels = {
+          mocktail: '🌱 無酒精 (0%)',
+          light: '🍹 輕盈 (≤12%)',
+          classic: '🍸 經典微醺 (13-22%)',
+          strong: '🥃 濃烈 (>22%)'
+        };
+        tags.push(`濃度: ${labels[currentAbvFilter] || currentAbvFilter}`);
+      }
+      if (onlyFavorites) tags.push(`僅顯示已收藏`);
+
+      list.innerHTML = tags.map(t => `
+        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          ${t}
+        </span>
+      `).join('');
+    }
+
+    /**
+     * STREAMING_CHUNK:Providing custom toast message alerts
+     */
+    function showToast(message, iconClass = 'fa-circle-check') {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.textContent = message;
+      toastIcon.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    // Close autocomplete when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.ing-brand') && !e.target.closest('[id$="_brandDropdown"]')) {
+        document.querySelectorAll('[id$="_brandDropdown"]').forEach(el => el.classList.add('hidden'));
+      }
+    });
+
+    // Start application on load
+    window.onload = function() {
+      initApp();
+    };
+  </script>
+</body>
+</html>
