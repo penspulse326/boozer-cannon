@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
+    "dev": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:server": "pnpm --filter server start:dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:style": "stylelint \"**/*.{css,scss,vue}\"",
@@ -12,7 +15,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "pnpm -r --if-present test",
-    "build": "pnpm -r --if-present build"
+    "build": "pnpm -r --if-present build",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter server db:generate",
+    "db:migrate": "pnpm --filter server db:migrate",
+    "db:studio": "pnpm --filter server db:studio"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
