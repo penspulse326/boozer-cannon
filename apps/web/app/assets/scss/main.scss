@@ -1,2 +1,5 @@
-// Bootstrap styles entry
+// 1. Custom variables & theme color overrides
+$primary: #f59e0b;
+
+// 2. Import Bootstrap SCSS
 @import 'bootstrap/scss/bootstrap';
