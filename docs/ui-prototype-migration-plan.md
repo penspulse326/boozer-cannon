@@ -134,7 +134,7 @@ flowchart TD
 
 ---
 
-### [ ] 階段 6：酒譜詳情彈窗（Detail Modal）與技法融水模擬器
+### [x] 階段 6：酒譜詳情彈窗（Detail Modal）與技法融水模擬器
 
 - **目標**：呈現酒譜完整配方、步驟、科學數據與互動式模擬，採用 Vue 原生條件渲染與 Tailwind 實作輕量彈窗，擺脫 Bootstrap Modal 依賴。
 - **檔案變動**：
