@@ -102,7 +102,7 @@ flowchart TD
 
 ---
 
-### [ ] 階段 4：多維篩選與排序控制列（Filter & Sorting Toolbar）
+### [x] 階段 4：多維篩選與排序控制列（Filter & Sorting Toolbar）
 
 - **目標**：提供多維度的酒譜快速過濾與排序機能，搭配 Tailwind 4 膠囊按鈕與響應式橫向滾動。
 - **檔案變動**：
