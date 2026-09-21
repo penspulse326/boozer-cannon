@@ -74,7 +74,9 @@ export function detectDefaultIngredientAbv(name = '', brandText = ''): number {
   const combined = `${name} ${brandText}`.toLowerCase();
   const brandObj = TAXONOMY.brands.find(
     (b) =>
-      combined.includes(b.primaryEn.toLowerCase()) || combined.includes(b.primaryZh.toLowerCase()),
+      combined.includes(b.primaryEn.toLowerCase()) ||
+      combined.includes(b.primaryZh.toLowerCase()) ||
+      b.aliases.some((alias) => combined.includes(alias.toLowerCase())),
   );
   if (brandObj && typeof brandObj.abv === 'number') {
     return brandObj.abv;
