@@ -41,7 +41,7 @@ flowchart TD
 
 ---
 
-### [ ] 階段 1：移除 Bootstrap 5 並配置 Tailwind CSS v4 與基礎主題
+### [x] 階段 1：移除 Bootstrap 5 並配置 Tailwind CSS v4 與基礎主題
 
 - **目標**：從 `apps/web` 徹底移除 Bootstrap 5 與 SCSS 相關依賴，配置 Tailwind CSS v4（透過 `@tailwindcss/vite`），建立 Speakeasy 暗色調酒主題色彩、自訂滾動條、字型（Inter, Playfair Display）與 Font Awesome 6 CDN。
 - **檔案變動**：
