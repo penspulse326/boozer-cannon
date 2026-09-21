@@ -151,7 +151,7 @@ flowchart TD
 
 ---
 
-### [ ] 階段 7：新增酒譜彈窗（Add Modal）與即時 Live ABV 試算表單
+### [x] 階段 7：新增酒譜彈窗（Add Modal）與即時 Live ABV 試算表單
 
 - **目標**：提供使用者動態編輯配方，並透過融水模型即時預估濃度，完全使用 Vue + Tailwind CSS 構建。
 - **檔案變動**：
