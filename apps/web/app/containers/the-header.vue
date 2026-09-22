@@ -1,24 +1,17 @@
 <script setup lang="ts">
+import SearchInput from '~/components/search-input.vue';
+
 defineProps<{
   onlyFavorites: boolean;
   searchQuery: string;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'open-add-modal'): void;
   (e: 'reset-all'): void;
   (e: 'toggle-favorites'): void;
   (e: 'update:searchQuery', val: string): void;
 }>();
-
-function clearSearch() {
-  emit('update:searchQuery', '');
-}
-
-function onInput(event: Event) {
-  const target = event.target as HTMLInputElement | null;
-  emit('update:searchQuery', target?.value || '');
-}
 </script>
 
 <template>
@@ -47,27 +40,12 @@ function onInput(event: Event) {
 
       <!-- Desktop Search Bar -->
       <div class="relative mx-6 hidden max-w-md flex-1 md:flex">
-        <div class="relative w-full">
-          <i
-            class="fa-solid fa-magnifying-glass absolute top-1/2 left-3.5 -translate-y-1/2 text-sm text-slate-400"
-          />
-          <input
-            class="w-full rounded-2xl border border-white/10 bg-speakeasy-900 py-2 pr-10 pl-10 text-xs text-white shadow-inner placeholder:text-slate-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none sm:text-sm"
-            placeholder="搜尋調酒名、基酒、材料、指定品牌或同義詞..."
-            type="text"
-            :value="searchQuery"
-            @input="onInput"
-            @keydown.esc="clearSearch"
-          />
-          <button
-            v-if="searchQuery.trim()"
-            class="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
-            type="button"
-            @click="clearSearch"
-          >
-            <i class="fa-solid fa-xmark" />
-          </button>
-        </div>
+        <SearchInput
+          input-class="rounded-2xl py-2 pr-10 pl-10 text-xs shadow-inner focus:ring-1 focus:ring-amber-500 sm:text-sm"
+          :model-value="searchQuery"
+          placeholder="搜尋調酒名、基酒、材料、指定品牌或同義詞..."
+          @update:model-value="$emit('update:searchQuery', $event)"
+        />
       </div>
 
       <!-- Top Action Buttons -->
@@ -103,27 +81,12 @@ function onInput(event: Event) {
 
     <!-- Mobile Search Bar -->
     <div class="px-4 pb-3 md:hidden">
-      <div class="relative w-full">
-        <i
-          class="fa-solid fa-magnifying-glass absolute top-1/2 left-3 -translate-y-1/2 text-xs text-slate-400"
-        />
-        <input
-          class="w-full rounded-xl border border-white/10 bg-speakeasy-900 py-2 pr-8 pl-8 text-xs text-white placeholder:text-slate-400 focus:border-amber-500 focus:outline-none"
-          placeholder="搜尋酒名、風味、材料品牌 (如: 坦奎利)..."
-          type="text"
-          :value="searchQuery"
-          @input="onInput"
-          @keydown.esc="clearSearch"
-        />
-        <button
-          v-if="searchQuery.trim()"
-          class="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
-          type="button"
-          @click="clearSearch"
-        >
-          <i class="fa-solid fa-xmark" />
-        </button>
-      </div>
+      <SearchInput
+        input-class="rounded-xl py-2 pr-8 pl-8 text-xs"
+        :model-value="searchQuery"
+        placeholder="搜尋酒名、風味、材料品牌 (如: 坦奎利)..."
+        @update:model-value="$emit('update:searchQuery', $event)"
+      />
     </div>
   </header>
 </template>

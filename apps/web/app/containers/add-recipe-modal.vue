@@ -1,29 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, toRef, watch } from 'vue';
 
-import type { BrandTaxonomy, Recipe } from '~/types/cocktail';
+import type { FormIngredient, FormStep, Recipe } from '~/types/cocktail';
 
 import AbvStructureMeter from '~/components/abv-structure-meter.vue';
+import FlavorTagPicker from '~/components/flavor-tag-picker.vue';
+import IngredientRowInput from '~/components/ingredient-row-input.vue';
 import { useModalLock } from '~/composables/useModalLock';
 import { calculateRecipeABV, detectDefaultIngredientAbv } from '~/utils/abvEngine';
-import { BASE_SPIRITS, TAXONOMY } from '~/utils/taxonomy';
-
-interface FormIngredient {
-  abv: null | number;
-  amount: string;
-  brandId: string;
-  brandText: string;
-  id: string;
-  name: string;
-  showBrandDropdown: boolean;
-  unit: string;
-  userModifiedAbv: boolean;
-}
-
-interface FormStep {
-  id: string;
-  text: string;
-}
+import { BASE_SPIRITS } from '~/utils/taxonomy';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -99,19 +84,6 @@ function createEmptyStep(text = ''): FormStep {
   };
 }
 
-function getBrandSuggestions(query: string) {
-  const q = (query || '').trim().toLowerCase();
-  if (!q) {
-    return [];
-  }
-  return TAXONOMY.brands.filter(
-    (b) =>
-      b.primaryEn.toLowerCase().includes(q) ||
-      b.primaryZh.toLowerCase().includes(q) ||
-      b.aliases.some((a) => a.toLowerCase().includes(q)),
-  );
-}
-
 function handleImageUpload(event: Event) {
   const target = event.target as HTMLInputElement | null;
   const file = target?.files?.[0];
@@ -146,44 +118,12 @@ function initForm() {
   };
 }
 
-function onIngredientNameChange(index: number) {
-  const row = addForm.value.ingredients[index];
-  if (!row) {
-    return;
-  }
-  if (!row.userModifiedAbv) {
-    row.abv = detectDefaultIngredientAbv(row.name, row.brandText);
-  }
-}
-
 function removeIngredientRow(index: number) {
   addForm.value.ingredients.splice(index, 1);
 }
 
 function removeStepRow(index: number) {
   addForm.value.steps.splice(index, 1);
-}
-
-function selectBrand(index: number, brand: BrandTaxonomy) {
-  const row = addForm.value.ingredients[index];
-  if (!row) {
-    return;
-  }
-  row.brandId = brand.id;
-  row.brandText = brand.primaryEn;
-  row.abv = brand.abv;
-  row.userModifiedAbv = true;
-  row.showBrandDropdown = false;
-}
-
-function toggleFormFlavor(flavorId: string) {
-  const set = new Set(addForm.value.flavors);
-  if (set.has(flavorId)) {
-    set.delete(flavorId);
-  } else {
-    set.add(flavorId);
-  }
-  addForm.value.flavors = Array.from(set);
 }
 
 const liveAbvData = computed(() => {
@@ -204,12 +144,6 @@ const liveAbvData = computed(() => {
     method: addForm.value.method,
   });
 });
-
-function onBrandBlur(row: FormIngredient) {
-  setTimeout(() => {
-    row.showBrandDropdown = false;
-  }, 200);
-}
 
 function submitAddRecipe() {
   const validIngredients = addForm.value.ingredients
@@ -423,29 +357,12 @@ function submitAddRecipe() {
           </div>
 
           <!-- Flavor Multi-Select Picker -->
+          <!-- Flavor Multi-Select Picker -->
           <div>
             <label class="mb-1.5 block text-xs font-semibold text-slate-300 uppercase">
               風味標籤 (可複選)
             </label>
-            <div
-              class="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-speakeasy-850 p-3"
-            >
-              <button
-                v-for="flavor in TAXONOMY.flavors"
-                :key="flavor.id"
-                class="flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs transition-all"
-                :class="
-                  addForm.flavors.includes(flavor.id)
-                    ? 'bg-amber-500 font-bold text-speakeasy-950 shadow-md shadow-amber-500/20'
-                    : 'border border-white/10 bg-speakeasy-900 text-slate-300 hover:bg-speakeasy-800'
-                "
-                type="button"
-                @click="toggleFormFlavor(flavor.id)"
-              >
-                <i :class="['fa-solid', flavor.icon, 'text-[10px]']" />
-                <span>{{ flavor.primaryZh }}</span>
-              </button>
-            </div>
+            <FlavorTagPicker v-model="addForm.flavors" />
           </div>
 
           <!-- Ingredients Section with Brand Tags -->
@@ -467,116 +384,12 @@ function submitAddRecipe() {
             </div>
 
             <div class="space-y-2.5">
-              <div
+              <IngredientRowInput
                 v-for="(row, rIdx) in addForm.ingredients"
                 :key="row.id"
-                class="relative grid grid-cols-1 items-center gap-2 rounded-2xl border border-white/5 bg-speakeasy-950/80 p-2.5 sm:grid-cols-12"
-              >
-                <!-- Material Name Input -->
-                <div class="relative sm:col-span-4">
-                  <input
-                    v-model="row.name"
-                    class="w-full rounded-xl border border-white/10 bg-speakeasy-900 px-3 py-1.5 text-xs text-white focus:border-amber-500 focus:outline-none"
-                    placeholder="材料名稱 (如: 琴酒)"
-                    required
-                    type="text"
-                    @input="onIngredientNameChange(rIdx)"
-                  />
-                </div>
-
-                <!-- Brand Autocomplete Input -->
-                <div class="relative sm:col-span-3">
-                  <input
-                    v-model="row.brandText"
-                    autocomplete="off"
-                    class="w-full rounded-xl border border-white/10 bg-speakeasy-900 px-3 py-1.5 text-xs text-amber-300 focus:border-amber-500 focus:outline-none"
-                    placeholder="指定品牌 (選填)"
-                    type="text"
-                    @blur="onBrandBlur(row)"
-                    @focus="row.showBrandDropdown = true"
-                    @input="
-                      row.showBrandDropdown = true;
-                      onIngredientNameChange(rIdx);
-                    "
-                  />
-                  <div
-                    v-if="row.showBrandDropdown && getBrandSuggestions(row.brandText).length > 0"
-                    class="absolute top-full left-0 z-30 mt-1 max-h-48 w-64 overflow-y-auto rounded-xl border border-white/15 bg-speakeasy-900 shadow-2xl"
-                  >
-                    <div
-                      v-for="brand in getBrandSuggestions(row.brandText)"
-                      :key="brand.id"
-                      class="cursor-pointer border-b border-white/5 p-2.5 transition-colors last:border-0 hover:bg-amber-500/20"
-                      @click="selectBrand(rIdx, brand)"
-                    >
-                      <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-amber-300">
-                          {{ brand.primaryEn }}
-                        </span>
-                        <span
-                          class="rounded bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-slate-400"
-                        >
-                          {{ brand.abv }}% ABV
-                        </span>
-                      </div>
-                      <div class="mt-0.5 text-[10px] text-slate-400">
-                        {{ brand.primaryZh }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Dosage Amount -->
-                <div class="sm:col-span-2">
-                  <input
-                    v-model="row.amount"
-                    class="w-full rounded-xl border border-white/10 bg-speakeasy-900 px-3 py-1.5 text-center text-xs text-white focus:border-amber-500 focus:outline-none"
-                    placeholder="份量"
-                    required
-                    type="text"
-                  />
-                </div>
-
-                <!-- Unit Selector -->
-                <div class="sm:col-span-1">
-                  <select
-                    v-model="row.unit"
-                    class="w-full rounded-xl border border-white/10 bg-speakeasy-900 px-1 py-1.5 text-[11px] text-white focus:border-amber-500 focus:outline-none"
-                  >
-                    <option value="ml">ml</option>
-                    <option value="oz">oz</option>
-                    <option value="dashes">滴</option>
-                    <option value="bar spoon">匙</option>
-                    <option value="補滿">補滿</option>
-                  </select>
-                </div>
-
-                <!-- ABV Input -->
-                <div class="sm:col-span-1">
-                  <input
-                    v-model.number="row.abv"
-                    class="w-full rounded-xl border border-white/10 bg-speakeasy-900 px-1.5 py-1.5 text-center font-mono text-[11px] text-amber-400 focus:border-amber-500 focus:outline-none"
-                    max="100"
-                    min="0"
-                    placeholder="%"
-                    step="0.1"
-                    title="材料酒精濃度 (%)"
-                    type="number"
-                    @input="row.userModifiedAbv = true"
-                  />
-                </div>
-
-                <!-- Delete Row -->
-                <div class="text-center sm:col-span-1">
-                  <button
-                    class="p-1 text-xs text-slate-500 transition-colors hover:text-rose-400"
-                    type="button"
-                    @click="removeIngredientRow(rIdx)"
-                  >
-                    <i class="fa-solid fa-trash-can" />
-                  </button>
-                </div>
-              </div>
+                v-model="addForm.ingredients[rIdx]"
+                @remove="removeIngredientRow(rIdx)"
+              />
             </div>
 
             <!-- Live ABV Estimation Box -->

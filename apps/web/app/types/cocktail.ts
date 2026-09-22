@@ -38,6 +38,23 @@ export interface FlavorTaxonomy {
   primaryZh: string;
 }
 
+export interface FormIngredient {
+  abv: null | number;
+  amount: string;
+  brandId: string;
+  brandText: string;
+  id: string;
+  name: string;
+  showBrandDropdown: boolean;
+  unit: string;
+  userModifiedAbv: boolean;
+}
+
+export interface FormStep {
+  id: string;
+  text: string;
+}
+
 export interface GlassTaxonomy {
   aliases: string[];
   id: string;
