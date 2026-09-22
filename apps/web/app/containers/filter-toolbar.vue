@@ -4,13 +4,13 @@ import { computed } from 'vue';
 import { BASE_SPIRITS, TAXONOMY } from '~/utils/taxonomy';
 
 const props = defineProps<{
-  currentAbvFilter: string;
-  currentCategory: string;
-  currentFlavor: string;
-  currentSort: string;
+  abvFilter: string;
+  category: string;
+  flavor: string;
   onlyFavorites: boolean;
   recipeCount: number;
   searchQuery: string;
+  sort: string;
 }>();
 
 const emit = defineEmits<{
@@ -37,9 +37,9 @@ const abvFilterOptions = [
 const hasActiveFilters = computed(() => {
   return (
     props.searchQuery.trim() !== '' ||
-    props.currentCategory !== 'all' ||
-    props.currentFlavor !== 'all' ||
-    props.currentAbvFilter !== 'all' ||
+    props.category !== 'all' ||
+    props.flavor !== 'all' ||
+    props.abvFilter !== 'all' ||
     props.onlyFavorites
   );
 });
@@ -49,16 +49,16 @@ const activeFilterSummary = computed(() => {
   if (props.searchQuery.trim()) {
     tags.push(`關鍵字: "${props.searchQuery}"`);
   }
-  if (props.currentCategory !== 'all') {
-    tags.push(`基酒: ${props.currentCategory}`);
+  if (props.category !== 'all') {
+    tags.push(`基酒: ${props.category}`);
   }
-  if (props.currentFlavor !== 'all') {
-    const found = TAXONOMY.flavors.find((f) => f.id === props.currentFlavor);
-    tags.push(`風味: ${found ? found.primaryZh : props.currentFlavor}`);
+  if (props.flavor !== 'all') {
+    const found = TAXONOMY.flavors.find((f) => f.id === props.flavor);
+    tags.push(`風味: ${found ? found.primaryZh : props.flavor}`);
   }
-  if (props.currentAbvFilter !== 'all') {
-    const option = abvFilterOptions.find((o) => o.id === props.currentAbvFilter);
-    tags.push(`濃度: ${option ? option.label : props.currentAbvFilter}`);
+  if (props.abvFilter !== 'all') {
+    const option = abvFilterOptions.find((o) => o.id === props.abvFilter);
+    tags.push(`濃度: ${option ? option.label : props.abvFilter}`);
   }
   if (props.onlyFavorites) {
     tags.push('僅顯示已收藏');
@@ -95,7 +95,7 @@ function onSortChange(event: Event) {
         <button
           class="rounded-xl px-3 py-1.5 text-xs whitespace-nowrap transition-all"
           :class="
-            currentFlavor === 'all'
+            flavor === 'all'
               ? 'bg-amber-500 font-semibold text-speakeasy-950 shadow-md'
               : 'border border-white/5 bg-speakeasy-850 text-slate-300 hover:bg-speakeasy-800'
           "
@@ -105,19 +105,19 @@ function onSortChange(event: Event) {
           全部風味
         </button>
         <button
-          v-for="flavor in TAXONOMY.flavors"
-          :key="flavor.id"
+          v-for="flv in TAXONOMY.flavors"
+          :key="flv.id"
           class="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs whitespace-nowrap transition-all"
           :class="
-            currentFlavor === flavor.id
+            flavor === flv.id
               ? 'bg-amber-500 font-bold text-speakeasy-950 shadow-md'
               : 'border border-white/5 bg-speakeasy-850 text-slate-300 hover:bg-speakeasy-800'
           "
           type="button"
-          @click="$emit('update:flavor', currentFlavor === flavor.id ? 'all' : flavor.id)"
+          @click="$emit('update:flavor', flavor === flv.id ? 'all' : flv.id)"
         >
-          <i class="fa-solid text-[10px]" :class="flavor.icon" />
-          <span>{{ flavor.primaryZh.slice(0, 2) }}</span>
+          <i class="fa-solid text-[10px]" :class="flv.icon" />
+          <span>{{ flv.primaryZh.slice(0, 2) }}</span>
         </button>
       </div>
     </div>
@@ -136,7 +136,7 @@ function onSortChange(event: Event) {
           :key="option.id"
           class="rounded-xl px-3 py-1.5 whitespace-nowrap transition-all"
           :class="
-            currentAbvFilter === option.id
+            abvFilter === option.id
               ? 'bg-amber-500 font-bold text-speakeasy-950'
               : 'border border-white/5 bg-speakeasy-850 text-slate-300 hover:bg-speakeasy-800'
           "
@@ -159,7 +159,7 @@ function onSortChange(event: Event) {
           :key="cat.id"
           class="rounded-xl px-4 py-2 text-xs whitespace-nowrap transition-all sm:text-sm"
           :class="
-            currentCategory === cat.id
+            category === cat.id
               ? 'bg-amber-500 font-semibold text-speakeasy-950 shadow-md shadow-amber-500/20'
               : 'border border-white/5 bg-speakeasy-850 font-medium text-slate-300 hover:bg-speakeasy-800 hover:text-white'
           "
@@ -181,7 +181,7 @@ function onSortChange(event: Event) {
           <i class="fa-solid fa-arrow-down-wide-short text-amber-500" />
           <select
             class="cursor-pointer bg-transparent text-xs text-slate-200 focus:outline-none"
-            :value="currentSort"
+            :value="sort"
             @change="onSortChange"
           >
             <option class="bg-speakeasy-900 text-white" value="likes">熱門讚數 (由多至少)</option>

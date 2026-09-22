@@ -201,6 +201,15 @@ const filteredRecipes = computed(() => {
     return true;
   });
 
+  if (currentSort.value === 'abv_desc' || currentSort.value === 'abv_asc') {
+    const listWithAbv = list.map((item) => ({
+      abv: calculateRecipeABV(item).abv,
+      item,
+    }));
+    listWithAbv.sort((a, b) => (currentSort.value === 'abv_desc' ? b.abv - a.abv : a.abv - b.abv));
+    return listWithAbv.map((entry) => entry.item);
+  }
+
   return list.sort((a, b) => {
     if (currentSort.value === 'likes') {
       return (b.likes || 0) - (a.likes || 0);
@@ -210,12 +219,6 @@ const filteredRecipes = computed(() => {
     }
     if (currentSort.value === 'name') {
       return (a.nameZh || '').localeCompare(b.nameZh || '', 'zh-TW');
-    }
-    if (currentSort.value === 'abv_desc') {
-      return calculateRecipeABV(b).abv - calculateRecipeABV(a).abv;
-    }
-    if (currentSort.value === 'abv_asc') {
-      return calculateRecipeABV(a).abv - calculateRecipeABV(b).abv;
     }
     return 0;
   });

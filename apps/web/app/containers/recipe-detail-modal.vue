@@ -35,8 +35,6 @@ watch(
   },
 );
 
-const detailRecipe = computed(() => props.recipe);
-
 const effectiveRecipe = computed(() => {
   if (!props.recipe) {
     return null;
@@ -69,7 +67,7 @@ const standardDrinkInfo = computed(() => {
 <template>
   <Teleport to="body">
     <div
-      v-if="detailRecipe"
+      v-if="effectiveRecipe"
       class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6"
       @click.self="$emit('close')"
     >
@@ -90,9 +88,9 @@ const standardDrinkInfo = computed(() => {
           <!-- Hero Header Image -->
           <div class="relative h-60 w-full bg-speakeasy-950 sm:h-72">
             <img
-              :alt="detailRecipe.nameZh"
+              :alt="effectiveRecipe.nameZh"
               class="size-full object-cover"
-              :src="detailRecipe.image || defaultImage"
+              :src="effectiveRecipe.image || defaultImage"
               @error="onImageError"
             />
             <div
@@ -104,7 +102,7 @@ const standardDrinkInfo = computed(() => {
                 <span
                   class="rounded-md bg-amber-500 px-2.5 py-0.5 text-xs font-semibold text-speakeasy-950"
                 >
-                  {{ detailRecipe.base }}
+                  {{ effectiveRecipe.base }}
                 </span>
                 <span
                   class="rounded-md border border-white/10 bg-white/10 px-2.5 py-0.5 text-xs font-medium text-slate-200"
@@ -119,10 +117,10 @@ const standardDrinkInfo = computed(() => {
                 </span>
               </div>
               <h2 class="font-serif text-2xl font-bold text-white sm:text-3xl">
-                {{ detailRecipe.nameZh }}
+                {{ effectiveRecipe.nameZh }}
               </h2>
               <p class="font-serif text-xs text-slate-300 italic sm:text-sm">
-                {{ detailRecipe.nameEn || '' }}
+                {{ effectiveRecipe.nameEn || '' }}
               </p>
             </div>
           </div>
@@ -136,19 +134,19 @@ const standardDrinkInfo = computed(() => {
               <div class="rounded-xl p-2">
                 <span class="mb-1 block text-slate-400">推薦杯型</span>
                 <span class="font-medium text-amber-300">
-                  {{ detailRecipe.glass || '標準調酒杯' }}
+                  {{ effectiveRecipe.glass || '標準調酒杯' }}
                 </span>
               </div>
               <div class="rounded-xl border-x border-white/10 p-2">
                 <span class="mb-1 block text-slate-400">冰塊種類</span>
                 <span class="font-medium text-amber-300">
-                  {{ detailRecipe.ice || '方形冰塊' }}
+                  {{ effectiveRecipe.ice || '方形冰塊' }}
                 </span>
               </div>
               <div class="rounded-xl p-2">
                 <span class="mb-1 block text-slate-400">風味裝飾</span>
                 <span class="font-medium text-amber-300">
-                  {{ detailRecipe.garnish || '適量裝飾' }}
+                  {{ effectiveRecipe.garnish || '適量裝飾' }}
                 </span>
               </div>
             </div>
@@ -257,11 +255,11 @@ const standardDrinkInfo = computed(() => {
                 風味調性 (Flavor Profile)
               </span>
               <div
-                v-if="detailRecipe.flavors && detailRecipe.flavors.length > 0"
+                v-if="effectiveRecipe.flavors && effectiveRecipe.flavors.length > 0"
                 class="flex flex-wrap gap-2"
               >
                 <span
-                  v-for="fId in detailRecipe.flavors"
+                  v-for="fId in effectiveRecipe.flavors"
                   :key="fId"
                   class="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-300"
                 >
@@ -280,7 +278,7 @@ const standardDrinkInfo = computed(() => {
                 酒譜介紹
               </span>
               <p class="text-xs leading-relaxed text-slate-300 sm:text-sm">
-                {{ detailRecipe.desc || '暫無風味詳細描述。' }}
+                {{ effectiveRecipe.desc || '暫無風味詳細描述。' }}
               </p>
             </div>
 
@@ -293,7 +291,7 @@ const standardDrinkInfo = computed(() => {
               </span>
               <div class="space-y-2">
                 <div
-                  v-for="(ing, idx) in detailRecipe.ingredients"
+                  v-for="(ing, idx) in effectiveRecipe.ingredients"
                   :key="idx"
                   class="flex items-center justify-between rounded-xl border border-white/5 bg-speakeasy-850/60 p-2.5 text-xs sm:text-sm"
                 >
@@ -321,7 +319,7 @@ const standardDrinkInfo = computed(() => {
                 調製步驟
               </span>
               <ol class="list-inside list-decimal space-y-2 text-xs text-slate-300 sm:text-sm">
-                <li v-for="(step, sIdx) in detailRecipe.steps" :key="sIdx" class="pl-1">
+                <li v-for="(step, sIdx) in effectiveRecipe.steps" :key="sIdx" class="pl-1">
                   {{ step }}
                 </li>
               </ol>
@@ -333,46 +331,46 @@ const standardDrinkInfo = computed(() => {
             >
               <span>
                 <i class="fa-solid fa-user-pen mr-1" />
-                配方提供：{{ detailRecipe.author || 'BarCraft 調酒師' }}
+                配方提供：{{ effectiveRecipe.author || 'BarCraft 調酒師' }}
               </span>
               <div class="flex items-center gap-3">
                 <button
                   class="flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition-colors"
                   :class="
-                    detailRecipe.isLiked
+                    effectiveRecipe.isLiked
                       ? 'border border-rose-500/30 bg-rose-500/20 text-rose-400'
                       : 'bg-speakeasy-800 text-slate-300 hover:bg-speakeasy-750'
                   "
                   type="button"
-                  @click="$emit('toggle-like', detailRecipe.id)"
+                  @click="$emit('toggle-like', effectiveRecipe.id)"
                 >
                   <i
                     :class="
-                      detailRecipe.isLiked
+                      effectiveRecipe.isLiked
                         ? 'fa-solid fa-heart text-rose-400'
                         : 'fa-regular fa-heart text-rose-400'
                     "
                   />
-                  <span>{{ detailRecipe.likes || 0 }}</span>
+                  <span>{{ effectiveRecipe.likes || 0 }}</span>
                 </button>
                 <button
                   class="flex items-center gap-1.5 rounded-xl px-3 py-1.5 font-bold transition-colors"
                   :class="
-                    detailRecipe.isFav
+                    effectiveRecipe.isFav
                       ? 'bg-amber-500 text-speakeasy-950'
                       : 'bg-speakeasy-800 text-slate-300 hover:bg-speakeasy-750'
                   "
                   type="button"
-                  @click="$emit('toggle-fav', detailRecipe.id)"
+                  @click="$emit('toggle-fav', effectiveRecipe.id)"
                 >
                   <i
                     :class="
-                      detailRecipe.isFav
+                      effectiveRecipe.isFav
                         ? 'fa-solid fa-bookmark'
                         : 'fa-regular fa-bookmark text-amber-400'
                     "
                   />
-                  <span>{{ detailRecipe.isFav ? '已收藏' : '收藏' }}</span>
+                  <span>{{ effectiveRecipe.isFav ? '已收藏' : '收藏' }}</span>
                 </button>
               </div>
             </div>
