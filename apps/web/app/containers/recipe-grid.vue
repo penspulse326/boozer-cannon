@@ -23,8 +23,8 @@ defineEmits<{
       v-for="recipe in recipes"
       :key="recipe.id"
       :recipe="recipe"
-      @click="$emit('select-recipe', recipe.id)"
       @filter-flavor="$emit('filter-flavor', $event)"
+      @select="$emit('select-recipe', $event)"
       @toggle-fav="$emit('toggle-fav', recipe.id)"
       @toggle-like="$emit('toggle-like', recipe.id)"
     />

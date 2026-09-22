@@ -57,6 +57,7 @@ function onInput(event: Event) {
             type="text"
             :value="searchQuery"
             @input="onInput"
+            @keydown.esc="clearSearch"
           />
           <button
             v-if="searchQuery.trim()"
@@ -112,6 +113,7 @@ function onInput(event: Event) {
           type="text"
           :value="searchQuery"
           @input="onInput"
+          @keydown.esc="clearSearch"
         />
         <button
           v-if="searchQuery.trim()"

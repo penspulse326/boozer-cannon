@@ -11,8 +11,8 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: 'click', recipeId: string): void;
   (e: 'filter-flavor', flavorId: string): void;
+  (e: 'select', recipeId: string): void;
   (e: 'toggle-fav', recipeId: string): void;
   (e: 'toggle-like', recipeId: string): void;
 }>();
@@ -32,6 +32,7 @@ function getFlavorInfo(flavorId: string) {
 function onImageError(e: Event) {
   const target = e.target as HTMLImageElement | null;
   if (target) {
+    target.onerror = null;
     target.src = 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail';
   }
 }
@@ -40,7 +41,7 @@ function onImageError(e: Event) {
 <template>
   <div
     class="group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border border-white/10 bg-speakeasy-900 shadow-xl transition-all duration-300 hover:border-amber-500/50 hover:shadow-2xl hover:shadow-amber-500/10"
-    @click="$emit('click', recipe.id)"
+    @click="$emit('select', recipe.id)"
   >
     <!-- Card Top Image -->
     <div class="relative h-52 w-full overflow-hidden bg-speakeasy-950 sm:h-56">

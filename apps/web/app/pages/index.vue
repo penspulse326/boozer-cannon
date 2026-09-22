@@ -26,6 +26,12 @@ const currentSort = ref('likes');
 const onlyFavorites = ref(false);
 
 const activeDetailRecipeId = ref<null | string>(null);
+const activeDetailRecipe = computed(() => {
+  if (!activeDetailRecipeId.value) {
+    return null;
+  }
+  return recipes.value.find((r) => r.id === activeDetailRecipeId.value) || null;
+});
 const isAddModalOpen = ref(false);
 
 const toast = ref({
@@ -254,8 +260,7 @@ const filteredRecipes = computed(() => {
     </main>
 
     <RecipeDetailModal
-      :recipe-id="activeDetailRecipeId"
-      :recipes="recipes"
+      :recipe="activeDetailRecipe"
       @close="closeDetailModal"
       @toggle-fav="toggleFavorite"
       @toggle-like="toggleLike"

@@ -120,7 +120,7 @@ function onSortChange(event: Event) {
               : 'border border-white/5 bg-speakeasy-850 text-slate-300 hover:bg-speakeasy-800'
           "
           type="button"
-          @click="$emit('update:flavor', flavor.id)"
+          @click="$emit('update:flavor', currentFlavor === flavor.id ? 'all' : flavor.id)"
         >
           <i class="fa-solid text-[10px]" :class="flavor.icon" />
           <span>{{ flavor.primaryZh.slice(0, 2) }}</span>

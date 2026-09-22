@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
@@ -9,11 +9,10 @@ import { calculateRecipeABV } from '~/utils/abvEngine';
 import { TAXONOMY } from '~/utils/taxonomy';
 
 const props = defineProps<{
-  recipeId: null | string;
-  recipes: Recipe[];
+  recipe: null | Recipe;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'toggle-fav', recipeId: string): void;
   (e: 'toggle-like', recipeId: string): void;
@@ -22,28 +21,26 @@ defineEmits<{
 const simulatedMethod = ref<null | string>(null);
 
 watch(
-  () => props.recipeId,
-  () => {
+  () => props.recipe,
+  (val) => {
     simulatedMethod.value = null;
+    if (import.meta.client) {
+      document.body.style.overflow = val ? 'hidden' : '';
+    }
   },
 );
 
-const detailRecipe = computed(() => {
-  if (!props.recipeId) {
-    return null;
-  }
-  return props.recipes.find((r) => r.id === props.recipeId) || null;
-});
+const detailRecipe = computed(() => props.recipe);
 
 const effectiveRecipe = computed(() => {
-  if (!detailRecipe.value) {
+  if (!props.recipe) {
     return null;
   }
   if (!simulatedMethod.value) {
-    return detailRecipe.value;
+    return props.recipe;
   }
   return {
-    ...detailRecipe.value,
+    ...props.recipe,
     method: simulatedMethod.value,
   };
 });
@@ -67,12 +64,32 @@ function getFlavorInfo(flavorId: string) {
   return TAXONOMY.flavors.find((f) => f.id === flavorId);
 }
 
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && props.recipe) {
+    emit('close');
+  }
+}
+
 function onImageError(e: Event) {
   const target = e.target as HTMLImageElement | null;
   if (target) {
+    target.onerror = null;
     target.src = 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail';
   }
 }
+
+onMounted(() => {
+  if (import.meta.client) {
+    window.addEventListener('keydown', handleKeydown);
+  }
+});
+
+onUnmounted(() => {
+  if (import.meta.client) {
+    window.removeEventListener('keydown', handleKeydown);
+    document.body.style.overflow = '';
+  }
+});
 </script>
 
 <template>
