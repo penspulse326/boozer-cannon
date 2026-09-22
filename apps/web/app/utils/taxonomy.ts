@@ -1,4 +1,4 @@
-import type { IngredientRule, Taxonomy } from '~/types/cocktail';
+import type { BaseSpiritOption, IngredientRule, Taxonomy } from '~/types/cocktail';
 
 export const TAXONOMY: Taxonomy = {
   brands: [
@@ -218,3 +218,13 @@ export const METHOD_DILUTION_RATES: Record<string, number> = {
   Shake: 0.33,
   Stir: 0.22,
 };
+
+export const BASE_SPIRITS: BaseSpiritOption[] = [
+  { id: 'Gin', label: '琴酒 Gin', nameEn: 'Gin', nameZh: '琴酒' },
+  { id: 'Whiskey', label: '威士忌 Whisky', nameEn: 'Whisky', nameZh: '威士忌' },
+  { id: 'Rum', label: '蘭姆酒 Rum', nameEn: 'Rum', nameZh: '蘭姆酒' },
+  { id: 'Tequila', label: '龍舌蘭 Tequila', nameEn: 'Tequila', nameZh: '龍舌蘭' },
+  { id: 'Vodka', label: '伏特加 Vodka', nameEn: 'Vodka', nameZh: '伏特加' },
+  { id: 'Brandy', label: '白蘭地 Brandy', nameEn: 'Brandy', nameZh: '白蘭地' },
+  { id: 'Other', label: '其他/無酒精', nameEn: 'Other / Mocktail', nameZh: '其他 / 無酒精' },
+];

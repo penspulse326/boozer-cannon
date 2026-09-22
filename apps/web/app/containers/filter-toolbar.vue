@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { TAXONOMY } from '~/utils/taxonomy';
+import { BASE_SPIRITS, TAXONOMY } from '~/utils/taxonomy';
 
 const props = defineProps<{
   currentAbvFilter: string;
@@ -23,13 +23,7 @@ const emit = defineEmits<{
 
 const baseCategories = [
   { id: 'all', label: '全部基酒' },
-  { id: 'Gin', label: '琴酒 Gin' },
-  { id: 'Whiskey', label: '威士忌 Whisky' },
-  { id: 'Rum', label: '蘭姆酒 Rum' },
-  { id: 'Tequila', label: '龍舌蘭 Tequila' },
-  { id: 'Vodka', label: '伏特加 Vodka' },
-  { id: 'Brandy', label: '白蘭地 Brandy' },
-  { id: 'Other', label: '其他/無酒精' },
+  ...BASE_SPIRITS.map((spirit) => ({ id: spirit.id, label: spirit.label })),
 ];
 
 const abvFilterOptions = [

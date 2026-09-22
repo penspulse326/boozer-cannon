@@ -5,7 +5,7 @@ import type { BrandTaxonomy, Recipe } from '~/types/cocktail';
 
 import AbvStructureMeter from '~/components/abv-structure-meter.vue';
 import { calculateRecipeABV, detectDefaultIngredientAbv } from '~/utils/abvEngine';
-import { TAXONOMY } from '~/utils/taxonomy';
+import { BASE_SPIRITS, TAXONOMY } from '~/utils/taxonomy';
 
 interface FormIngredient {
   abv: null | number;
@@ -347,13 +347,9 @@ onUnmounted(() => {
                 class="w-full rounded-xl border border-white/10 bg-speakeasy-850 px-3.5 py-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
                 required
               >
-                <option value="Gin">琴酒 (Gin)</option>
-                <option value="Whiskey">威士忌 (Whisky)</option>
-                <option value="Rum">蘭姆酒 (Rum)</option>
-                <option value="Tequila">龍舌蘭 (Tequila)</option>
-                <option value="Vodka">伏特加 (Vodka)</option>
-                <option value="Brandy">白蘭地 (Brandy)</option>
-                <option value="Other">其他 / 無酒精 (Mocktail)</option>
+                <option v-for="spirit in BASE_SPIRITS" :key="spirit.id" :value="spirit.id">
+                  {{ spirit.nameZh }} ({{ spirit.nameEn }})
+                </option>
               </select>
             </div>
             <div>

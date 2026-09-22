@@ -10,8 +10,15 @@ export interface ABVCalculationResult {
   pureAlcoholMl: number;
   strengthColor: string;
   strengthLabel: string;
-  strengthLevel: 'classic' | 'light' | 'mocktail' | 'strong';
+  strengthLevel: StrengthLevel;
   undilutedMl: number;
+}
+
+export interface BaseSpiritOption {
+  id: string;
+  label: string;
+  nameEn: string;
+  nameZh: string;
 }
 
 export interface BrandTaxonomy {
@@ -72,8 +79,10 @@ export interface Recipe {
   nameEn?: string;
   nameZh: string;
   steps?: string[];
-  strengthLevel?: string;
+  strengthLevel?: StrengthLevel;
 }
+
+export type StrengthLevel = 'classic' | 'light' | 'mocktail' | 'strong';
 
 export interface Taxonomy {
   brands: BrandTaxonomy[];

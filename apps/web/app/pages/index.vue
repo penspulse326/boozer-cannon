@@ -12,10 +12,9 @@ import RecipeDetailModal from '~/containers/recipe-detail-modal.vue';
 import RecipeGrid from '~/containers/recipe-grid.vue';
 import TheHeader from '~/containers/the-header.vue';
 import { calculateRecipeABV } from '~/utils/abvEngine';
+import { STORAGE_KEY } from '~/utils/constants';
 import { DEFAULT_RECIPES } from '~/utils/seedData';
 import { TAXONOMY } from '~/utils/taxonomy';
-
-const STORAGE_KEY = 'barcraft_recipes_v2';
 
 const recipes = ref<Recipe[]>([]);
 const currentCategory = ref('all');
