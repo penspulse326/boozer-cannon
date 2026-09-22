@@ -111,6 +111,15 @@ function onToggleFavorites() {
           <i class="fa-solid fa-plus text-sm" />
           <span>新增酒譜</span>
         </button>
+
+        <NuxtLink
+          class="flex items-center gap-1.5 rounded-xl border border-white/10 bg-speakeasy-850 px-3.5 py-2 text-xs font-medium text-slate-300 shadow-sm transition-all hover:bg-speakeasy-800 hover:text-white sm:text-sm"
+          title="調酒師登入"
+          to="/login"
+        >
+          <i class="fa-solid fa-user text-xs" />
+          <span class="hidden sm:inline">登入</span>
+        </NuxtLink>
       </div>
     </div>
 
