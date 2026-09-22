@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
 import AppToast from '~/components/app-toast.vue';
+import { useRecipeFilters } from '~/composables/useRecipeFilters';
+import { useRecipeStore } from '~/composables/useRecipeStore';
+import { useToast } from '~/composables/useToast';
 import AddRecipeModal from '~/containers/add-recipe-modal.vue';
 import AppFooter from '~/containers/app-footer.vue';
 import FilterToolbar from '~/containers/filter-toolbar.vue';
@@ -11,18 +14,21 @@ import HeroSection from '~/containers/hero-section.vue';
 import RecipeDetailModal from '~/containers/recipe-detail-modal.vue';
 import RecipeGrid from '~/containers/recipe-grid.vue';
 import TheHeader from '~/containers/the-header.vue';
-import { calculateRecipeABV } from '~/utils/abvEngine';
-import { STORAGE_KEY } from '~/utils/constants';
-import { DEFAULT_RECIPES } from '~/utils/seedData';
-import { TAXONOMY } from '~/utils/taxonomy';
 
-const recipes = ref<Recipe[]>([]);
-const currentCategory = ref('all');
-const currentFlavor = ref('all');
-const currentAbvFilter = ref('all');
-const searchQuery = ref('');
-const currentSort = ref('likes');
-const onlyFavorites = ref(false);
+const { showToast, toast } = useToast();
+const { addRecipe, recipes, toggleFavorite, toggleLike } = useRecipeStore(showToast);
+
+const {
+  currentAbvFilter,
+  currentCategory,
+  currentFlavor,
+  currentSort,
+  filteredRecipes,
+  onlyFavorites,
+  resetAllFilters,
+  searchQuery,
+  setFlavorFilter,
+} = useRecipeFilters(recipes);
 
 const activeDetailRecipeId = ref<null | string>(null);
 const activeDetailRecipe = computed(() => {
@@ -31,198 +37,21 @@ const activeDetailRecipe = computed(() => {
   }
   return recipes.value.find((r) => r.id === activeDetailRecipeId.value) || null;
 });
+
 const isAddModalOpen = ref(false);
-
-const toast = ref({
-  icon: 'fa-circle-check',
-  message: '',
-  show: false,
-});
-let toastTimer: null | ReturnType<typeof setTimeout> = null;
-
-onMounted(() => {
-  loadRecipes();
-});
 
 function closeDetailModal() {
   activeDetailRecipeId.value = null;
 }
 
-function expandSearchKeywords(query: string): string[] {
-  const q = query.trim().toLowerCase();
-  if (!q) {
-    return [];
-  }
-  const keywords = new Set<string>([q]);
-
-  TAXONOMY.flavors.forEach((f) => {
-    if (f.aliases.some((a) => a.toLowerCase().includes(q) || q.includes(a.toLowerCase()))) {
-      keywords.add(f.id);
-      keywords.add(f.primaryEn.toLowerCase());
-      f.aliases.forEach((a) => keywords.add(a.toLowerCase()));
-    }
-  });
-
-  TAXONOMY.brands.forEach((b) => {
-    if (b.aliases.some((a) => a.toLowerCase().includes(q) || q.includes(a.toLowerCase()))) {
-      keywords.add(b.id);
-      keywords.add(b.primaryEn.toLowerCase());
-      keywords.add(b.primaryZh.toLowerCase());
-      b.aliases.forEach((a) => keywords.add(a.toLowerCase()));
-    }
-  });
-
-  return Array.from(keywords);
-}
-
 function handleAddRecipe(newRecipe: Recipe) {
-  recipes.value.unshift(newRecipe);
-  saveRecipesToStorage();
+  addRecipe(newRecipe);
   isAddModalOpen.value = false;
-  showToast('成功發布新酒譜！', 'fa-circle-check');
-}
-
-function loadRecipes() {
-  if (import.meta.client && typeof globalThis.localStorage !== 'undefined') {
-    const stored = globalThis.localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        recipes.value = JSON.parse(stored);
-        return;
-      } catch {
-        recipes.value = [...DEFAULT_RECIPES];
-      }
-    } else {
-      recipes.value = [...DEFAULT_RECIPES];
-    }
-  } else {
-    recipes.value = [...DEFAULT_RECIPES];
-  }
 }
 
 function openDetailModal(recipeId: string) {
   activeDetailRecipeId.value = recipeId;
 }
-
-function recipeMatchesQuery(recipe: Recipe, expandedTerms: string[]): boolean {
-  const fullText = [
-    recipe.nameZh,
-    recipe.nameEn,
-    recipe.base,
-    recipe.method,
-    recipe.glass,
-    recipe.ice,
-    recipe.garnish,
-    recipe.desc,
-    recipe.author,
-    ...(recipe.flavors || []),
-    ...(recipe.ingredients || []).map((i) => `${i.name} ${i.brandText || ''} ${i.brandId || ''}`),
-  ]
-    .join(' ')
-    .toLowerCase();
-
-  return expandedTerms.some((term) => fullText.includes(term));
-}
-
-function resetAllFilters() {
-  searchQuery.value = '';
-  currentCategory.value = 'all';
-  currentFlavor.value = 'all';
-  currentAbvFilter.value = 'all';
-  onlyFavorites.value = false;
-}
-
-function saveRecipesToStorage() {
-  if (import.meta.client && typeof globalThis.localStorage !== 'undefined') {
-    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes.value));
-  }
-}
-
-function setFlavorFilter(flavorId: string) {
-  currentFlavor.value = flavorId;
-}
-
-function showToast(message: string, icon = 'fa-circle-check') {
-  if (toastTimer) {
-    clearTimeout(toastTimer);
-  }
-  toast.value = { icon, message, show: true };
-  toastTimer = setTimeout(() => {
-    toast.value.show = false;
-  }, 2500);
-}
-
-function toggleFavorite(id: string) {
-  const recipe = recipes.value.find((r) => r.id === id);
-  if (!recipe) {
-    return;
-  }
-  recipe.isFav = !recipe.isFav;
-  saveRecipesToStorage();
-  showToast(recipe.isFav ? '已加入我的收藏' : '已從收藏中移除', 'fa-bookmark');
-}
-
-function toggleLike(id: string) {
-  const recipe = recipes.value.find((r) => r.id === id);
-  if (!recipe) {
-    return;
-  }
-  recipe.isLiked = !recipe.isLiked;
-  recipe.likes = (recipe.likes || 0) + (recipe.isLiked ? 1 : -1);
-  saveRecipesToStorage();
-}
-
-const filteredRecipes = computed(() => {
-  const list = recipes.value.filter((item) => {
-    if (currentCategory.value !== 'all' && item.base !== currentCategory.value) {
-      return false;
-    }
-    if (currentFlavor.value !== 'all') {
-      const itemFlavors = item.flavors || [];
-      if (!itemFlavors.includes(currentFlavor.value)) {
-        return false;
-      }
-    }
-    if (currentAbvFilter.value !== 'all') {
-      const abvData = calculateRecipeABV(item);
-      if (abvData.strengthLevel !== currentAbvFilter.value) {
-        return false;
-      }
-    }
-    if (onlyFavorites.value && !item.isFav) {
-      return false;
-    }
-    if (searchQuery.value.trim() !== '') {
-      const expanded = expandSearchKeywords(searchQuery.value);
-      if (!recipeMatchesQuery(item, expanded)) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  if (currentSort.value === 'abv_desc' || currentSort.value === 'abv_asc') {
-    const listWithAbv = list.map((item) => ({
-      abv: calculateRecipeABV(item).abv,
-      item,
-    }));
-    listWithAbv.sort((a, b) => (currentSort.value === 'abv_desc' ? b.abv - a.abv : a.abv - b.abv));
-    return listWithAbv.map((entry) => entry.item);
-  }
-
-  return list.sort((a, b) => {
-    if (currentSort.value === 'likes') {
-      return (b.likes || 0) - (a.likes || 0);
-    }
-    if (currentSort.value === 'newest') {
-      return (b.createdAt || 0) - (a.createdAt || 0);
-    }
-    if (currentSort.value === 'name') {
-      return (a.nameZh || '').localeCompare(b.nameZh || '', 'zh-TW');
-    }
-    return 0;
-  });
-});
 </script>
 
 <template>
