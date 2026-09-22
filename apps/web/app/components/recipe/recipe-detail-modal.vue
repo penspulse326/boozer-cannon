@@ -3,8 +3,8 @@ import { computed, ref, watch } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
-import AbvStructureMeter from '~/components/abv-structure-meter.vue';
-import TechniqueButtons from '~/components/technique-buttons.vue';
+import AbvStructureMeter from '~/components/recipe/abv-structure-meter.vue';
+import TechniqueButtons from '~/components/recipe/technique-buttons.vue';
 import { useImageFallback } from '~/composables/useImageFallback';
 import { useModalLock } from '~/composables/useModalLock';
 import { useTaxonomy } from '~/composables/useTaxonomy';

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Recipe } from '~/types/cocktail';
 
-import EmptyState from '~/components/empty-state.vue';
-import RecipeCard from '~/components/recipe-card.vue';
+import EmptyState from '~/components/common/empty-state.vue';
+import RecipeCard from '~/components/recipe/recipe-card.vue';
 
 defineProps<{
   recipes: Recipe[];

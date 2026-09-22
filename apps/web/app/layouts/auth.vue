@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppToast from '~/components/app-toast.vue';
+import AppToast from '~/components/common/app-toast.vue';
 </script>
 
 <template>

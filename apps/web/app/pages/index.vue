@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
+import HeroSection from '~/components/layout/hero-section.vue';
+import FilterToolbar from '~/components/recipe/filter-toolbar.vue';
+import RecipeDetailModal from '~/components/recipe/recipe-detail-modal.vue';
+import RecipeGrid from '~/components/recipe/recipe-grid.vue';
 import { useRecipeFilters } from '~/composables/useRecipeFilters';
 import { useRecipeStore } from '~/composables/useRecipeStore';
-import FilterToolbar from '~/containers/filter-toolbar.vue';
-import HeroSection from '~/containers/hero-section.vue';
-import RecipeDetailModal from '~/containers/recipe-detail-modal.vue';
-import RecipeGrid from '~/containers/recipe-grid.vue';
 
 const { recipes, toggleFavorite, toggleLike } = useRecipeStore();
 

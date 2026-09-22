@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import SearchInput from '~/components/search-input.vue';
+import SearchInput from '~/components/common/search-input.vue';
 import { useAddRecipeModal } from '~/composables/useAddRecipeModal';
 import { useRecipeFilters } from '~/composables/useRecipeFilters';
 

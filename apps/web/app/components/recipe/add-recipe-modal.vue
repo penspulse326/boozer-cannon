@@ -3,9 +3,9 @@ import { computed, ref, watch } from 'vue';
 
 import type { FormIngredient, FormStep, Recipe } from '~/types/cocktail';
 
-import AbvStructureMeter from '~/components/abv-structure-meter.vue';
-import FlavorTagPicker from '~/components/flavor-tag-picker.vue';
-import IngredientRowInput from '~/components/ingredient-row-input.vue';
+import AbvStructureMeter from '~/components/recipe/abv-structure-meter.vue';
+import FlavorTagPicker from '~/components/recipe/flavor-tag-picker.vue';
+import IngredientRowInput from '~/components/recipe/ingredient-row-input.vue';
 import { useAddRecipeModal } from '~/composables/useAddRecipeModal';
 import { useModalLock } from '~/composables/useModalLock';
 import { useRecipeStore } from '~/composables/useRecipeStore';

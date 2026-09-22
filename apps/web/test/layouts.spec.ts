@@ -12,8 +12,8 @@ describe('Layout Architecture', () => {
         stubs: {
           AddRecipeModal: true,
           AppFooter: true,
+          AppHeader: true,
           AppToast: true,
-          TheHeader: true,
         },
       },
       slots: {
