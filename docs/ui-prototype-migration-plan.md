@@ -199,23 +199,14 @@ flowchart TD
 
 ---
 
-### [ ] 階段 10：Layout 系統架構與多頁面架構演進 (Layout Migration & Multi-page Readiness)
+### [x] 階段 10：Layout 系統架構與多頁面架構演進 (Layout Migration & Multi-page Readiness)
 
 - **目標**：將全域導覽、頁尾與通知自 `index.vue` 剝離至 Nuxt Layout 系統，支援未來多頁面（酒譜詳情、工具試算、身分驗證等）之獨立排版需求。
 - **工作項目**：
-  - [ ] **10.1 全域動作與導覽狀態解耦**：
-    - 建立 `useAddRecipeModal` composable，使全域任何頁面的按鈕皆能開關新增酒譜彈窗。
-    - 調整 `TheHeader` 與 `useRecipeFilters`，支援 URL Query（`?q=...`）同步或全域搜尋狀態。
-  - [ ] **10.2 實作預設佈局 (`layouts/default.vue`)**：
-    - 在 `app/app.vue` 中配置 `<NuxtLayout><NuxtPage /></NuxtLayout>`。
-    - 在 `app/layouts/default.vue` 組合 `TheHeader`、`<slot />`、`AppFooter`、`AppToast` 與 `AddRecipeModal`。
-    - 清理 `app/pages/index.vue`，專注呈現頁面本體（Hero、FilterToolbar、RecipeGrid、DetailModal）。
-  - [ ] **10.3 實作身分驗證專用佈局 (`layouts/auth.vue`)**：
-    - 建立極簡 auth layout（無搜尋、無酒譜操作按鈕，置中卡片式 container 與極簡聲明）。
-    - 建立範例/登入路由 `app/pages/login.vue`，設定 `definePageMeta({ layout: 'auth' })`。
-  - [ ] **10.4 整合測試與建置檢查**：
-    - 撰寫 layout 渲染測試，驗證 `default` 與 `auth` layout 切換正常。
-    - 執行 `pnpm lint`, `pnpm test`, `pnpm --filter web build` 確認全數綠燈。
+  - [x] **10.1 全域動作與導覽狀態解耦**：建立 `useAddRecipeModal`，並升級 `useToast`、`useRecipeStore`、`useRecipeFilters` 與 `the-header.vue`，支援全域彈窗與狀態共享。（Commit: `36b14d3`）
+  - [x] **10.2 實作預設佈局 (`layouts/default.vue`)**：建立 `default.vue`，在 `app.vue` 掛載 `<NuxtLayout>`，並徹底瘦身 `index.vue`（移除 Header、Footer、Toast、AddModal）。（Commit: `b055bfc`）
+  - [x] **10.3 實作身分驗證專用佈局 (`layouts/auth.vue`)**：建立極簡 auth layout、登入頁 `app/pages/login.vue`，並於 Header 整合登入連結。（Commit: `143bfff`）
+  - [x] **10.4 整合測試與建置檢查**：新增 `apps/web/test/layouts.spec.ts` 驗證 layout 槽位渲染，執行 `pnpm lint`, `pnpm test`, `pnpm --filter web build` 確認全部通過。
 
 ---
 
