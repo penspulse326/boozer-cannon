@@ -2,11 +2,23 @@ import { onMounted, ref } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
+import { useToast } from '~/composables/useToast';
 import { STORAGE_KEY } from '~/utils/constants';
 import { DEFAULT_RECIPES } from '~/utils/seedData';
 
+const recipes = ref<Recipe[]>([]);
+let isInitialized = false;
+
 export function useRecipeStore(onNotify?: (message: string, icon?: string) => void) {
-  const recipes = ref<Recipe[]>([]);
+  const { showToast } = useToast();
+
+  function notify(message: string, icon = 'fa-circle-check') {
+    if (onNotify) {
+      onNotify(message, icon);
+    } else {
+      showToast(message, icon);
+    }
+  }
 
   function loadRecipes() {
     if (import.meta.client && typeof globalThis.localStorage !== 'undefined') {
@@ -35,9 +47,7 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
   function addRecipe(newRecipe: Recipe) {
     recipes.value.unshift(newRecipe);
     saveRecipesToStorage();
-    if (onNotify) {
-      onNotify('成功發布新酒譜！', 'fa-circle-check');
-    }
+    notify('成功發布新酒譜！', 'fa-circle-check');
   }
 
   function toggleFavorite(id: string) {
@@ -47,9 +57,7 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     }
     recipe.isFav = !recipe.isFav;
     saveRecipesToStorage();
-    if (onNotify) {
-      onNotify(recipe.isFav ? '已加入我的收藏' : '已從收藏中移除', 'fa-bookmark');
-    }
+    notify(recipe.isFav ? '已加入我的收藏' : '已從收藏中移除', 'fa-bookmark');
   }
 
   function toggleLike(id: string) {
@@ -63,7 +71,10 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
   }
 
   onMounted(() => {
-    loadRecipes();
+    if (!isInitialized) {
+      loadRecipes();
+      isInitialized = true;
+    }
   });
 
   return {

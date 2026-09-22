@@ -2,16 +2,20 @@ import { computed, type Ref, ref } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
+import { useRecipeStore } from '~/composables/useRecipeStore';
 import { calculateRecipeABV } from '~/utils/abvEngine';
 import { TAXONOMY } from '~/utils/taxonomy';
 
-export function useRecipeFilters(recipes: Ref<Recipe[]>) {
-  const currentCategory = ref('all');
-  const currentFlavor = ref('all');
-  const currentAbvFilter = ref('all');
-  const searchQuery = ref('');
-  const currentSort = ref('likes');
-  const onlyFavorites = ref(false);
+const currentCategory = ref('all');
+const currentFlavor = ref('all');
+const currentAbvFilter = ref('all');
+const searchQuery = ref('');
+const currentSort = ref('likes');
+const onlyFavorites = ref(false);
+
+export function useRecipeFilters(customRecipes?: Ref<Recipe[]>) {
+  const store = useRecipeStore();
+  const recipes = customRecipes || store.recipes;
 
   function resetAllFilters() {
     searchQuery.value = '';
@@ -23,6 +27,10 @@ export function useRecipeFilters(recipes: Ref<Recipe[]>) {
 
   function setFlavorFilter(flavorId: string) {
     currentFlavor.value = flavorId;
+  }
+
+  function toggleFavorites() {
+    onlyFavorites.value = !onlyFavorites.value;
   }
 
   function expandSearchKeywords(query: string): string[] {
@@ -138,5 +146,6 @@ export function useRecipeFilters(recipes: Ref<Recipe[]>) {
     resetAllFilters,
     searchQuery,
     setFlavorFilter,
+    toggleFavorites,
   };
 }

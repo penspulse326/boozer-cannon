@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, toRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import type { FormIngredient, FormStep, Recipe } from '~/types/cocktail';
 
 import AbvStructureMeter from '~/components/abv-structure-meter.vue';
 import FlavorTagPicker from '~/components/flavor-tag-picker.vue';
 import IngredientRowInput from '~/components/ingredient-row-input.vue';
+import { useAddRecipeModal } from '~/composables/useAddRecipeModal';
 import { useModalLock } from '~/composables/useModalLock';
+import { useRecipeStore } from '~/composables/useRecipeStore';
+import { useToast } from '~/composables/useToast';
 import { calculateRecipeABV, detectDefaultIngredientAbv } from '~/utils/abvEngine';
 import { BASE_SPIRITS } from '~/utils/taxonomy';
 
 const props = defineProps<{
-  isOpen: boolean;
+  isOpen?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -20,7 +23,19 @@ const emit = defineEmits<{
   (e: 'submit', recipe: Recipe): void;
 }>();
 
-useModalLock(toRef(props, 'isOpen'), () => emit('close'));
+const { closeAddModal: globalCloseAddModal, isAddModalOpen: globalIsAddModalOpen } =
+  useAddRecipeModal();
+const { addRecipe: globalAddRecipe } = useRecipeStore();
+const { showToast } = useToast();
+
+const isModalActive = computed(() => props.isOpen ?? globalIsAddModalOpen.value);
+
+function handleClose() {
+  globalCloseAddModal();
+  emit('close');
+}
+
+useModalLock(isModalActive, handleClose);
 
 const addForm = ref({
   author: '',
@@ -38,14 +53,11 @@ const addForm = ref({
   steps: [] as FormStep[],
 });
 
-watch(
-  () => props.isOpen,
-  (val) => {
-    if (val) {
-      initForm();
-    }
-  },
-);
+watch(isModalActive, (val) => {
+  if (val) {
+    initForm();
+  }
+});
 
 function addIngredientRow() {
   addForm.value.ingredients.push(createEmptyIngredient());
@@ -158,6 +170,7 @@ function submitAddRecipe() {
     }));
 
   if (validIngredients.length === 0) {
+    showToast('請至少填寫一項調酒材料！', 'fa-triangle-exclamation');
     emit('error', '請至少填寫一項調酒材料！', 'fa-triangle-exclamation');
     return;
   }
@@ -189,16 +202,18 @@ function submitAddRecipe() {
     strengthLevel: liveAbvData.value.strengthLevel,
   };
 
+  globalAddRecipe(newRecipe);
   emit('submit', newRecipe);
+  handleClose();
 }
 </script>
 
 <template>
   <Teleport to="body">
     <div
-      v-if="isOpen"
+      v-if="isModalActive"
       class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6"
-      @click.self="$emit('close')"
+      @click.self="handleClose"
     >
       <div
         class="relative my-8 w-full max-w-3xl overflow-hidden rounded-3xl border border-white/15 bg-speakeasy-900 shadow-2xl transition-all"
@@ -216,7 +231,7 @@ function submitAddRecipe() {
           <button
             class="flex size-9 items-center justify-center rounded-full bg-white/5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
             type="button"
-            @click="$emit('close')"
+            @click="handleClose"
           >
             <i class="fa-solid fa-xmark" />
           </button>
@@ -544,7 +559,7 @@ function submitAddRecipe() {
             <button
               class="rounded-xl px-5 py-2.5 text-xs text-slate-400 transition-colors hover:bg-white/5 hover:text-white sm:text-sm"
               type="button"
-              @click="$emit('close')"
+              @click="handleClose"
             >
               取消
             </button>

@@ -1,14 +1,14 @@
-import { onUnmounted, ref } from 'vue';
+import { ref } from 'vue';
+
+const toast = ref({
+  icon: 'fa-circle-check',
+  message: '',
+  show: false,
+});
+
+let toastTimer: null | ReturnType<typeof setTimeout> = null;
 
 export function useToast() {
-  const toast = ref({
-    icon: 'fa-circle-check',
-    message: '',
-    show: false,
-  });
-
-  let toastTimer: null | ReturnType<typeof setTimeout> = null;
-
   function showToast(message: string, icon = 'fa-circle-check') {
     if (toastTimer) {
       clearTimeout(toastTimer);
@@ -18,12 +18,6 @@ export function useToast() {
       toast.value.show = false;
     }, 2500);
   }
-
-  onUnmounted(() => {
-    if (toastTimer) {
-      clearTimeout(toastTimer);
-    }
-  });
 
   return {
     showToast,
