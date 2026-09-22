@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
 import AbvStructureMeter from '~/components/abv-structure-meter.vue';
 import TechniqueButtons from '~/components/technique-buttons.vue';
+import { useImageFallback } from '~/composables/useImageFallback';
+import { useModalLock } from '~/composables/useModalLock';
+import { useTaxonomy } from '~/composables/useTaxonomy';
 import { calculateRecipeABV } from '~/utils/abvEngine';
-import { TAXONOMY } from '~/utils/taxonomy';
 
 const props = defineProps<{
   recipe: null | Recipe;
@@ -18,15 +20,18 @@ const emit = defineEmits<{
   (e: 'toggle-like', recipeId: string): void;
 }>();
 
+const { getFlavorInfo } = useTaxonomy();
+const { defaultImage, onImageError } = useImageFallback();
+
 const simulatedMethod = ref<null | string>(null);
+const isModalOpen = computed(() => !!props.recipe);
+
+useModalLock(isModalOpen, () => emit('close'));
 
 watch(
   () => props.recipe,
-  (val) => {
+  () => {
     simulatedMethod.value = null;
-    if (import.meta.client) {
-      document.body.style.overflow = val ? 'hidden' : '';
-    }
   },
 );
 
@@ -59,37 +64,6 @@ const standardDrinkInfo = computed(() => {
     standardDrinks,
   };
 });
-
-function getFlavorInfo(flavorId: string) {
-  return TAXONOMY.flavors.find((f) => f.id === flavorId);
-}
-
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && props.recipe) {
-    emit('close');
-  }
-}
-
-function onImageError(e: Event) {
-  const target = e.target as HTMLImageElement | null;
-  if (target) {
-    target.onerror = null;
-    target.src = 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail';
-  }
-}
-
-onMounted(() => {
-  if (import.meta.client) {
-    window.addEventListener('keydown', handleKeydown);
-  }
-});
-
-onUnmounted(() => {
-  if (import.meta.client) {
-    window.removeEventListener('keydown', handleKeydown);
-    document.body.style.overflow = '';
-  }
-});
 </script>
 
 <template>
@@ -118,9 +92,7 @@ onUnmounted(() => {
             <img
               :alt="detailRecipe.nameZh"
               class="size-full object-cover"
-              :src="
-                detailRecipe.image || 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail'
-              "
+              :src="detailRecipe.image || defaultImage"
               @error="onImageError"
             />
             <div

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, ref, toRef, watch } from 'vue';
 
 import type { BrandTaxonomy, Recipe } from '~/types/cocktail';
 
 import AbvStructureMeter from '~/components/abv-structure-meter.vue';
+import { useModalLock } from '~/composables/useModalLock';
 import { calculateRecipeABV, detectDefaultIngredientAbv } from '~/utils/abvEngine';
 import { BASE_SPIRITS, TAXONOMY } from '~/utils/taxonomy';
 
@@ -34,6 +35,8 @@ const emit = defineEmits<{
   (e: 'submit', recipe: Recipe): void;
 }>();
 
+useModalLock(toRef(props, 'isOpen'), () => emit('close'));
+
 const addForm = ref({
   author: '',
   base: 'Gin',
@@ -55,9 +58,6 @@ watch(
   (val) => {
     if (val) {
       initForm();
-    }
-    if (import.meta.client) {
-      document.body.style.overflow = val ? 'hidden' : '';
     }
   },
 );
@@ -205,12 +205,6 @@ const liveAbvData = computed(() => {
   });
 });
 
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && props.isOpen) {
-    emit('close');
-  }
-}
-
 function onBrandBlur(row: FormIngredient) {
   setTimeout(() => {
     row.showBrandDropdown = false;
@@ -263,19 +257,6 @@ function submitAddRecipe() {
 
   emit('submit', newRecipe);
 }
-
-onMounted(() => {
-  if (import.meta.client) {
-    window.addEventListener('keydown', handleKeydown);
-  }
-});
-
-onUnmounted(() => {
-  if (import.meta.client) {
-    window.removeEventListener('keydown', handleKeydown);
-    document.body.style.overflow = '';
-  }
-});
 </script>
 
 <template>

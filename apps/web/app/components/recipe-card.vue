@@ -3,8 +3,9 @@ import { computed } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
+import { useImageFallback } from '~/composables/useImageFallback';
+import { useTaxonomy } from '~/composables/useTaxonomy';
 import { calculateRecipeABV } from '~/utils/abvEngine';
-import { TAXONOMY } from '~/utils/taxonomy';
 
 const props = defineProps<{
   recipe: Recipe;
@@ -17,6 +18,9 @@ defineEmits<{
   (e: 'toggle-like', recipeId: string): void;
 }>();
 
+const { getFlavorInfo } = useTaxonomy();
+const { defaultImage, onImageError } = useImageFallback();
+
 const abvData = computed(() => {
   return calculateRecipeABV(props.recipe);
 });
@@ -24,18 +28,6 @@ const abvData = computed(() => {
 const brandedIngredients = computed(() => {
   return (props.recipe.ingredients || []).filter((i) => i.brandText && i.brandText.trim());
 });
-
-function getFlavorInfo(flavorId: string) {
-  return TAXONOMY.flavors.find((f) => f.id === flavorId);
-}
-
-function onImageError(e: Event) {
-  const target = e.target as HTMLImageElement | null;
-  if (target) {
-    target.onerror = null;
-    target.src = 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail';
-  }
-}
 </script>
 
 <template>
@@ -48,7 +40,7 @@ function onImageError(e: Event) {
       <img
         :alt="recipe.nameZh"
         class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-        :src="recipe.image || 'https://placehold.co/600x400/181b24/f59e0b?text=Cocktail'"
+        :src="recipe.image || defaultImage"
         @error="onImageError"
       />
       <div
