@@ -28,6 +28,11 @@ export default defineNuxtConfig({
   ],
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
+  routeRules: {
+    '/api/**': {
+      proxy: process.env.API_PROXY_TARGET || 'http://localhost:3000/api/**',
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
   },

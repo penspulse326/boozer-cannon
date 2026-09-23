@@ -1,12 +1,17 @@
+import type { ApiRecipeItem, GetRecipesQueryDto, PaginatedResult } from '@boozer/shared/dto';
+
 import { onMounted, ref } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
 import { useToast } from '~/composables/useToast';
 import { STORAGE_KEY } from '~/utils/constants';
+import { mapApiRecipeToRecipe } from '~/utils/recipeAdapter';
 import { DEFAULT_RECIPES } from '~/utils/seedData';
 
 const recipes = ref<Recipe[]>([]);
+const isLoading = ref(false);
+const error = ref<null | string>(null);
 let isInitialized = false;
 
 export function useRecipeStore(onNotify?: (message: string, icon?: string) => void) {
@@ -20,21 +25,24 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     }
   }
 
-  function loadRecipes() {
-    if (import.meta.client && typeof globalThis.localStorage !== 'undefined') {
+  function getLocalInteractions(): {
+    favorites: Set<string>;
+    likes: Set<string>;
+  } {
+    if (!import.meta.client || typeof globalThis.localStorage === 'undefined') {
+      return { favorites: new Set(), likes: new Set() };
+    }
+    try {
       const stored = globalThis.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          recipes.value = JSON.parse(stored);
-          return;
-        } catch {
-          recipes.value = [...DEFAULT_RECIPES];
-        }
-      } else {
-        recipes.value = [...DEFAULT_RECIPES];
+      if (!stored) {
+        return { favorites: new Set(), likes: new Set() };
       }
-    } else {
-      recipes.value = [...DEFAULT_RECIPES];
+      const parsed: Recipe[] = JSON.parse(stored);
+      const favorites = new Set(parsed.filter((r) => r.isFav).map((r) => r.id));
+      const likes = new Set(parsed.filter((r) => r.isLiked).map((r) => r.id));
+      return { favorites, likes };
+    } catch {
+      return { favorites: new Set(), likes: new Set() };
     }
   }
 
@@ -42,6 +50,45 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     if (import.meta.client && typeof globalThis.localStorage !== 'undefined') {
       globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(recipes.value));
     }
+  }
+
+  async function fetchRecipes(query?: GetRecipesQueryDto) {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const res = await $fetch<PaginatedResult<ApiRecipeItem>>('/api/recipes', {
+        query,
+      });
+
+      const { favorites, likes } = getLocalInteractions();
+
+      recipes.value = (res.data || []).map((item) => {
+        const mapped = mapApiRecipeToRecipe(item);
+        if (favorites.has(mapped.id)) {
+          mapped.isFav = true;
+        }
+        if (likes.has(mapped.id)) {
+          mapped.isLiked = true;
+        }
+        return mapped;
+      });
+    } catch (err: unknown) {
+      const fetchError = err as { data?: { message?: string }; message?: string };
+      error.value =
+        fetchError.data?.message ||
+        fetchError.message ||
+        '無法連線至伺服器讀取酒譜，請檢查網路狀態或重試。';
+      if (recipes.value.length === 0) {
+        recipes.value = [...DEFAULT_RECIPES];
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  function retry() {
+    return fetchRecipes();
   }
 
   function addRecipe(newRecipe: Recipe) {
@@ -72,15 +119,18 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
 
   onMounted(() => {
     if (!isInitialized) {
-      loadRecipes();
+      fetchRecipes();
       isInitialized = true;
     }
   });
 
   return {
     addRecipe,
-    loadRecipes,
+    error,
+    fetchRecipes,
+    isLoading,
     recipes,
+    retry,
     saveRecipesToStorage,
     toggleFavorite,
     toggleLike,
