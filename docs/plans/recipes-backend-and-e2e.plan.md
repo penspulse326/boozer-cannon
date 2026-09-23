@@ -37,20 +37,22 @@ flowchart TD
 
 ---
 
-### [ ] 階段 1：資料庫 Schema 落地、Migration 與種子資料匯入 (Database Foundation & Seed)
+### [x] 階段 1：資料庫 Schema 落地、Migration 與種子資料匯入 (Database Foundation & Seed)
 
 - **目標**：根據 `concept/model.dbml` 完整建立 PostgreSQL 關聯資料表，透過 Drizzle ORM 完成型別安全的資料層基底，並匯入標準字典與種子酒譜。
 - **工作項目**：
-  - [ ] 1.1 在 `apps/server/src/db/schema.ts` 定義完整資料表：
+  - [x] 1.1 在 `apps/server/src/db/schema.ts` 定義完整資料表：
     - 標準字典與別名：`canonical_entities`, `entity_aliases`, `flavors`
     - 酒譜核心與關聯：`recipes`, `recipe_ingredients`, `recipe_garnishes`, `recipe_flavors`
     - 社群互動表：`recipe_likes`, `recipe_favorites`
-  - [ ] 1.2 產生 Drizzle 遷移檔案 (`pnpm db:generate`) 並執行資料庫遷移 (`pnpm db:migrate`)。
-  - [ ] 1.3 撰寫 `apps/server/src/db/seed.ts`，匯入杯型/品牌/風味實體與 4 款經典種子調酒資料。
-  - [ ] 1.4 撰寫資料庫連線與查詢測試。
-- **預計 Commit**：
+  - [x] 1.2 產生 Drizzle 遷移檔案 (`pnpm db:generate`) 並執行資料庫遷移 (`pnpm db:migrate`)。
+  - [x] 1.3 撰寫 `apps/server/src/db/seed.ts`，匯入杯型/品牌/風味實體與 4 款經典種子調酒資料。
+  - [x] 1.4 撰寫資料庫連線與查詢測試 (`apps/server/src/db/schema.spec.ts`)。
+- **完成 Commit**：
   ```bash
-  feat(server): implement full drizzle schema from dbml, migration, and seed script
+  feat(server): define taxonomy, recipes, and social schema with drizzle migrations
+  feat(server): implement database seed script for canonical entities and seed recipes
+  test(server): add database schema relations and seed verification tests
   ```
 
 ---
