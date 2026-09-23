@@ -13,6 +13,10 @@ describe('RecipesController', () => {
       data: [{ id: '1', nameEn: 'Negroni' }],
       meta: { limit: 10, page: 1, total: 1, totalPages: 1 },
     }),
+    findOne: vi.fn().mockResolvedValue({
+      id: '10000000-0000-0000-0000-000000000001',
+      nameEn: 'Negroni',
+    }),
   };
 
   beforeEach(async () => {
@@ -46,5 +50,18 @@ describe('RecipesController', () => {
     expect(service.findAll).toHaveBeenCalledWith(query);
     expect(result.data.length).toBe(1);
     expect(result.data[0]?.nameEn).toBe('Negroni');
+  });
+
+  it('should delegate id to RecipesService.findOne', async () => {
+    // Arrange
+    const recipeId = '10000000-0000-0000-0000-000000000001';
+
+    // Act
+    const result = await controller.getRecipe(recipeId);
+
+    // Assert
+    expect(service.findOne).toHaveBeenCalledWith(recipeId);
+    expect(result).toBeDefined();
+    expect(result.id).toBe(recipeId);
   });
 });

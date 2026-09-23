@@ -1,6 +1,6 @@
 import type { GetRecipesQueryDto, PaginatedResult } from '@boozer/shared/dto';
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.provider.js';
@@ -36,10 +36,17 @@ export class RecipesService {
       where: whereClause,
       with: {
         author: true,
-        garnishes: true,
+        garnishes: {
+          with: { garnishEntity: true },
+        },
         glassEntity: true,
         iceEntity: true,
-        ingredients: true,
+        ingredients: {
+          with: {
+            brandEntity: true,
+            ingredientEntity: true,
+          },
+        },
         recipeFlavors: {
           with: { flavor: true },
         },
@@ -55,6 +62,35 @@ export class RecipesService {
         totalPages: Math.ceil(total / limit) || 1,
       },
     };
+  }
+
+  async findOne(id: string): Promise<RecipeWithRelations> {
+    const recipe = await this.db.query.recipes.findFirst({
+      where: eq(schema.recipes.id, id),
+      with: {
+        author: true,
+        garnishes: {
+          with: { garnishEntity: true },
+        },
+        glassEntity: true,
+        iceEntity: true,
+        ingredients: {
+          with: {
+            brandEntity: true,
+            ingredientEntity: true,
+          },
+        },
+        recipeFlavors: {
+          with: { flavor: true },
+        },
+      },
+    });
+
+    if (!recipe) {
+      throw new NotFoundException(`Recipe with ID "${id}" not found`);
+    }
+
+    return recipe;
   }
 
   private buildOrderBy(sort?: GetRecipesQueryDto['sort']) {

@@ -129,4 +129,37 @@ describe('RecipesService (TDD)', () => {
     const abv2 = Number(page2.data[0]?.calculatedAbv);
     expect(abv1).toBeLessThanOrEqual(abv2);
   });
+
+  it('Scenario 6: should return a recipe with complete relations by id', async () => {
+    // Arrange
+    const negroniId = '10000000-0000-0000-0000-000000000001';
+
+    // Act
+    const recipe = await service.findOne(negroniId);
+
+    // Assert
+    expect(recipe).toBeDefined();
+    expect(recipe.id).toBe(negroniId);
+    expect(recipe.nameEn).toBe('Negroni');
+    expect(recipe.baseSpirit).toBe('Gin');
+    expect(recipe.author).toBeDefined();
+    expect(recipe.author.name).toBe('BarCraft 首席調酒師');
+    expect(recipe.glassEntity?.id).toBe('glass_rocks');
+    expect(recipe.iceEntity?.id).toBe('ice_cube');
+    expect(recipe.garnishes.length).toBe(1);
+    expect(recipe.recipeFlavors.length).toBe(3);
+    expect(recipe.recipeFlavors[0]?.flavor).toBeDefined();
+    expect(recipe.ingredients.length).toBe(3);
+    expect(Array.isArray(recipe.instructions)).toBe(true);
+  });
+
+  it('Scenario 7: should throw NotFoundException when recipe id does not exist', async () => {
+    // Arrange
+    const nonExistentId = '00000000-0000-0000-0000-000000000000';
+
+    // Act & Assert
+    await expect(service.findOne(nonExistentId)).rejects.toThrow(
+      `Recipe with ID "${nonExistentId}" not found`,
+    );
+  });
 });
