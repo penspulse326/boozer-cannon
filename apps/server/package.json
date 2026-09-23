@@ -10,6 +10,7 @@
     "build": "nest build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "node --experimental-strip-types src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "deploy": "nest deploy",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
