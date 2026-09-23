@@ -22,16 +22,13 @@ describe('Database Schema & Seed Relations', () => {
   });
 
   it('should query seeded taxonomy and canonical entities with aliases', async () => {
-    // Arrange
     const brandId = 'brand_tanqueray';
 
-    // Act
     const brand = await db.query.canonicalEntities.findFirst({
       where: eq(schema.canonicalEntities.id, brandId),
       with: { aliases: true },
     });
 
-    // Assert
     expect(brand).toBeDefined();
     expect(brand?.nameZh).toBe('坦奎利 (Tanqueray)');
     expect(brand?.category).toBe('brand');
@@ -40,10 +37,8 @@ describe('Database Schema & Seed Relations', () => {
   });
 
   it('should query seeded recipes with nested relations (ingredients, garnishes, flavors)', async () => {
-    // Arrange
     const negroniId = '10000000-0000-0000-0000-000000000001';
 
-    // Act
     const recipe = await db.query.recipes.findFirst({
       where: eq(schema.recipes.id, negroniId),
       with: {
@@ -58,7 +53,6 @@ describe('Database Schema & Seed Relations', () => {
       },
     });
 
-    // Assert
     expect(recipe).toBeDefined();
     expect(recipe?.nameEn).toBe('Negroni');
     expect(recipe?.baseSpirit).toBe('Gin');
@@ -72,7 +66,6 @@ describe('Database Schema & Seed Relations', () => {
   });
 
   it('should enforce cascade deletion for recipe ingredients and flavors', async () => {
-    // Arrange: Create a temporary test author and recipe
     const [testAuthor] = await db
       .insert(schema.users)
       .values({
@@ -103,10 +96,8 @@ describe('Database Schema & Seed Relations', () => {
       recipeId: testRecipe.id,
     });
 
-    // Act: Delete test recipe
     await db.delete(schema.recipes).where(eq(schema.recipes.id, testRecipe.id));
 
-    // Assert: Dependent ingredients and flavors should be cascade deleted
     const ingredients = await db
       .select()
       .from(schema.recipeIngredients)
@@ -119,12 +110,10 @@ describe('Database Schema & Seed Relations', () => {
     expect(ingredients.length).toBe(0);
     expect(flavorsRel.length).toBe(0);
 
-    // Clean up author
     await db.delete(schema.users).where(eq(schema.users.id, testAuthor.id));
   });
 
   it('should set null on recipe foreign keys when canonical entity is deleted', async () => {
-    // Arrange: Create a temporary author, canonical entity, and recipe
     const [testAuthor] = await db
       .insert(schema.users)
       .values({
@@ -151,17 +140,14 @@ describe('Database Schema & Seed Relations', () => {
       })
       .returning();
 
-    // Act: Delete canonical glass entity
     await db.delete(schema.canonicalEntities).where(eq(schema.canonicalEntities.id, tempGlassId));
 
-    // Assert: GlassEntityId in recipe should be set to null
     const [updatedRecipe] = await db
       .select()
       .from(schema.recipes)
       .where(eq(schema.recipes.id, testRecipe.id));
     expect(updatedRecipe.glassEntityId).toBeNull();
 
-    // Clean up
     await db.delete(schema.users).where(eq(schema.users.id, testAuthor.id));
   });
 });

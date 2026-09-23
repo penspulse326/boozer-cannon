@@ -8,7 +8,7 @@ import type { DrizzleDB } from '../db/drizzle.provider.js';
 import * as schema from '../db/schema.ts';
 import { RecipesService } from './recipes.service.ts';
 
-describe('RecipesService (TDD)', () => {
+describe('RecipesService', () => {
   let pool: pg.Pool;
   let db: DrizzleDB;
   let service: RecipesService;
@@ -26,13 +26,10 @@ describe('RecipesService (TDD)', () => {
   });
 
   it('Scenario 1: should return paginated list with relations and metadata by default', async () => {
-    // Arrange
     const query = {};
 
-    // Act
     const result = await service.findAll(query);
 
-    // Assert
     expect(result.data).toBeDefined();
     expect(result.data.length).toBe(4);
     expect(result.meta).toEqual({
@@ -50,49 +47,37 @@ describe('RecipesService (TDD)', () => {
   });
 
   it('Scenario 2: should search recipes by case-insensitive nameZh or nameEn', async () => {
-    // Arrange: search for 'negroni' (lowercase)
     const query = { search: 'negroni' };
 
-    // Act
     const result = await service.findAll(query);
 
-    // Assert
     expect(result.data.length).toBe(1);
     expect(result.data[0]?.nameEn).toBe('Negroni');
     expect(result.meta.total).toBe(1);
 
-    // Arrange: search for Chinese keyword '琴通寧'
     const zhQuery = { search: '琴通寧' };
 
-    // Act
     const zhResult = await service.findAll(zhQuery);
 
-    // Assert
     expect(zhResult.data.length).toBe(1);
     expect(zhResult.data[0]?.nameZh).toBe('亨利爵士琴通寧');
   });
 
   it('Scenario 3: should filter recipes by base spirit', async () => {
-    // Arrange: filter base spirit 'Gin'
     const query = { base: 'Gin' };
 
-    // Act
     const result = await service.findAll(query);
 
-    // Assert: should find Negroni and Gin & Tonic (2 recipes)
     expect(result.data.length).toBe(2);
     expect(result.data.every((r) => r.baseSpirit === 'Gin')).toBe(true);
     expect(result.meta.total).toBe(2);
   });
 
   it('Scenario 4: should filter recipes by flavor tag id', async () => {
-    // Arrange: filter flavor 'flavor_bitter'
     const query = { flavor: 'flavor_bitter' };
 
-    // Act
     const result = await service.findAll(query);
 
-    // Assert: Negroni and Old Fashioned have bitter flavor
     expect(result.data.length).toBe(2);
     const names = result.data.map((r) => r.nameEn);
     expect(names).toContain('Negroni');
@@ -101,13 +86,10 @@ describe('RecipesService (TDD)', () => {
   });
 
   it('Scenario 5: should sort by abv ascending and support page slice', async () => {
-    // Arrange: sort by abv_asc with limit = 2
     const query = { limit: 2, page: 1, sort: 'abv_asc' as const };
 
-    // Act
     const page1 = await service.findAll(query);
 
-    // Assert
     expect(page1.data.length).toBe(2);
     expect(page1.meta).toEqual({
       limit: 2,
@@ -120,10 +102,8 @@ describe('RecipesService (TDD)', () => {
     const abv1 = Number(page1.data[1]?.calculatedAbv);
     expect(abv0).toBeLessThanOrEqual(abv1);
 
-    // Act: fetch page 2
     const page2 = await service.findAll({ limit: 2, page: 2, sort: 'abv_asc' });
 
-    // Assert
     expect(page2.data.length).toBe(2);
     expect(page2.meta.page).toBe(2);
     const abv2 = Number(page2.data[0]?.calculatedAbv);
@@ -131,13 +111,10 @@ describe('RecipesService (TDD)', () => {
   });
 
   it('Scenario 6: should return a recipe with complete relations by id', async () => {
-    // Arrange
     const negroniId = '10000000-0000-0000-0000-000000000001';
 
-    // Act
     const recipe = await service.findOne(negroniId);
 
-    // Assert
     expect(recipe).toBeDefined();
     expect(recipe.id).toBe(negroniId);
     expect(recipe.nameEn).toBe('Negroni');
@@ -154,10 +131,8 @@ describe('RecipesService (TDD)', () => {
   });
 
   it('Scenario 7: should throw NotFoundException when recipe id does not exist', async () => {
-    // Arrange
     const nonExistentId = '00000000-0000-0000-0000-000000000000';
 
-    // Act & Assert
     await expect(service.findOne(nonExistentId)).rejects.toThrow(
       `Recipe with ID "${nonExistentId}" not found`,
     );

@@ -15,17 +15,14 @@ describe('ZodValidationPipe', () => {
   const pipe = new ZodValidationPipe(testSchema);
 
   it('should transform and apply defaults on valid input', () => {
-    // Arrange
     const input = {
       limit: '5',
       page: '2',
       search: 'gin',
     };
 
-    // Act
     const result = pipe.transform(input);
 
-    // Assert
     expect(result).toEqual({
       limit: 5,
       page: 2,
@@ -35,13 +32,11 @@ describe('ZodValidationPipe', () => {
   });
 
   it('should throw BadRequestException on invalid input', () => {
-    // Arrange: invalid sort and negative page
     const invalidInput = {
       page: -1,
       sort: 'unknown_sort',
     };
 
-    // Act & Assert
     expect(() => pipe.transform(invalidInput)).toThrow(BadRequestException);
   });
 });

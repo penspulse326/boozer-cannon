@@ -336,3 +336,14 @@ export const recipeFavoritesRelations = relations(recipeFavorites, ({ one }) => 
     references: [users.id],
   }),
 }));
+
+export type CanonicalEntity = typeof canonicalEntities.$inferSelect;
+export type EntityAlias = typeof entityAliases.$inferSelect;
+export type Flavor = typeof flavors.$inferSelect;
+export type Recipe = typeof recipes.$inferSelect;
+export type RecipeFavorite = typeof recipeFavorites.$inferSelect;
+export type RecipeFlavor = typeof recipeFlavors.$inferSelect;
+export type RecipeGarnish = typeof recipeGarnishes.$inferSelect;
+export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
+export type RecipeLike = typeof recipeLikes.$inferSelect;
+export type User = typeof users.$inferSelect;

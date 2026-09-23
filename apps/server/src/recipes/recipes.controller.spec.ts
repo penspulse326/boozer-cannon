@@ -1,3 +1,5 @@
+import type { GetRecipesQueryDto } from '@boozer/shared/dto';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,31 +37,26 @@ describe('RecipesController', () => {
   });
 
   it('should delegate query parameters to RecipesService.findAll with parsed numbers', async () => {
-    // Arrange
-    const query = {
+    const query: GetRecipesQueryDto = {
       base: 'Gin',
       limit: 5,
       page: 2,
       search: 'negroni',
+      sort: 'newest',
     };
 
-    // Act
     const result = await controller.getRecipes(query);
 
-    // Assert
     expect(service.findAll).toHaveBeenCalledWith(query);
     expect(result.data.length).toBe(1);
     expect(result.data[0]?.nameEn).toBe('Negroni');
   });
 
   it('should delegate id to RecipesService.findOne', async () => {
-    // Arrange
     const recipeId = '10000000-0000-0000-0000-000000000001';
 
-    // Act
     const result = await controller.getRecipe(recipeId);
 
-    // Assert
     expect(service.findOne).toHaveBeenCalledWith(recipeId);
     expect(result).toBeDefined();
     expect(result.id).toBe(recipeId);

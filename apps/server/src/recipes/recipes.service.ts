@@ -1,4 +1,4 @@
-import type { GetRecipesQueryDto, PaginatedResult } from '@boozer/shared/dto';
+import type { GetRecipesQueryInput, PaginatedResult } from '@boozer/shared/dto';
 
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
@@ -6,15 +6,23 @@ import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from 'drizzle
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.provider.js';
 import * as schema from '../db/schema.ts';
 
-export type RecipeWithRelations = NonNullable<
-  Awaited<ReturnType<DrizzleDB['query']['recipes']['findFirst']>>
->;
+export type RecipeWithRelations = schema.Recipe & {
+  author: schema.User;
+  garnishes: (schema.RecipeGarnish & { garnishEntity: null | schema.CanonicalEntity })[];
+  glassEntity: null | schema.CanonicalEntity;
+  iceEntity: null | schema.CanonicalEntity;
+  ingredients: (schema.RecipeIngredient & {
+    brandEntity: null | schema.CanonicalEntity;
+    ingredientEntity: null | schema.CanonicalEntity;
+  })[];
+  recipeFlavors: (schema.RecipeFlavor & { flavor: schema.Flavor })[];
+};
 
 @Injectable()
 export class RecipesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async findAll(query: GetRecipesQueryDto): Promise<PaginatedResult<RecipeWithRelations>> {
+  async findAll(query: GetRecipesQueryInput = {}): Promise<PaginatedResult<RecipeWithRelations>> {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(50, Math.max(1, query.limit || 10));
     const offset = (page - 1) * limit;
@@ -93,7 +101,7 @@ export class RecipesService {
     return recipe;
   }
 
-  private buildOrderBy(sort?: GetRecipesQueryDto['sort']) {
+  private buildOrderBy(sort?: GetRecipesQueryInput['sort']) {
     switch (sort) {
       case 'abv_asc':
         return [asc(schema.recipes.calculatedAbv)];
@@ -109,7 +117,7 @@ export class RecipesService {
     }
   }
 
-  private buildWhereConditions(query: GetRecipesQueryDto): SQL | undefined {
+  private buildWhereConditions(query: GetRecipesQueryInput): SQL | undefined {
     const conditions: SQL[] = [];
 
     if (query.search?.trim()) {
