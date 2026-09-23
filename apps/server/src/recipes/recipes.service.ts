@@ -1,7 +1,7 @@
+import type { GetRecipesQueryDto, PaginatedResult } from '@boozer/shared/dto';
+
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
-
-import type { GetRecipesQueryDto, PaginatedRecipesResult } from './dto/get-recipes-query.dto.ts';
 
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.provider.js';
 import * as schema from '../db/schema.ts';
@@ -14,7 +14,7 @@ export type RecipeWithRelations = NonNullable<
 export class RecipesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
-  async findAll(query: GetRecipesQueryDto): Promise<PaginatedRecipesResult<RecipeWithRelations>> {
+  async findAll(query: GetRecipesQueryDto): Promise<PaginatedResult<RecipeWithRelations>> {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(50, Math.max(1, query.limit || 10));
     const offset = (page - 1) * limit;

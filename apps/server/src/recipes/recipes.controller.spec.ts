@@ -43,14 +43,7 @@ describe('RecipesController', () => {
     const result = await controller.getRecipes(query);
 
     // Assert
-    expect(service.findAll).toHaveBeenCalledWith({
-      base: 'Gin',
-      limit: 5,
-      maxAbv: undefined,
-      minAbv: undefined,
-      page: 2,
-      search: 'negroni',
-    });
+    expect(service.findAll).toHaveBeenCalledWith(query);
     expect(result.data.length).toBe(1);
     expect(result.data[0]?.nameEn).toBe('Negroni');
   });
