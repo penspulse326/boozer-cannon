@@ -78,17 +78,18 @@ flowchart TD
 
 ---
 
-### [ ] 階段 3：垂直切片 2 —— 酒譜詳細資訊與技法融水 (Recipe Details & Dilution)
+### [x] 階段 3：垂直切片 2 —— 酒譜詳細資訊與技法融水 (Recipe Details & Dilution)
 
 - **目標**：提供單一酒譜完整資訊端點，並支援詳細彈窗與未來獨立頁面渲染。
 - **工作項目**：
-  - [ ] 3.1 後端端點：`GET /api/recipes/:id`（回傳材料比例、裝飾物、調製步驟與物理預估數值）。
-  - [ ] 3.2 前端串接：
+  - [x] 3.1 後端端點：`GET /api/recipes/:id`（回傳材料比例、裝飾物、調製步驟與物理預估數值）。
+  - [x] 3.2 前端串接：
     - `RecipeDetailModal` 透過 API 即時讀取最新酒譜資料。
     - 保留前端技術模擬器（Stir/Shake）之即時稀釋推估能力。
-- **預計 Commit**：
+- **完成 Commit**：
   ```bash
-  feat(server): implement get recipe detail api
+  feat(shared): add recipeIdParamSchema and recipeIdSchema
+  feat(server): implement get recipe detail api with full relations
   feat(web): integrate recipe detail api and dilution simulator
   ```
 
