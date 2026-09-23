@@ -8,7 +8,8 @@ import RecipeGrid from '~/components/recipe/recipe-grid.vue';
 import { useRecipeFilters } from '~/composables/useRecipeFilters';
 import { useRecipeStore } from '~/composables/useRecipeStore';
 
-const { error, isLoading, recipes, retry, toggleFavorite, toggleLike } = useRecipeStore();
+const { error, fetchRecipeById, isLoading, recipes, retry, toggleFavorite, toggleLike } =
+  useRecipeStore();
 
 const {
   currentAbvFilter,
@@ -34,8 +35,9 @@ function closeDetailModal() {
   activeDetailRecipeId.value = null;
 }
 
-function openDetailModal(recipeId: string) {
+async function openDetailModal(recipeId: string) {
   activeDetailRecipeId.value = recipeId;
+  await fetchRecipeById(recipeId);
 }
 </script>
 

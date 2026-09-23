@@ -91,6 +91,30 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     return fetchRecipes();
   }
 
+  async function fetchRecipeById(id: string): Promise<null | Recipe> {
+    try {
+      const item = await $fetch<ApiRecipeItem>(`/api/recipes/${id}`);
+      const { favorites, likes } = getLocalInteractions();
+      const mapped = mapApiRecipeToRecipe(item);
+      if (favorites.has(mapped.id)) {
+        mapped.isFav = true;
+      }
+      if (likes.has(mapped.id)) {
+        mapped.isLiked = true;
+      }
+
+      const index = recipes.value.findIndex((r) => r.id === id);
+      if (index !== -1) {
+        recipes.value[index] = mapped;
+      } else {
+        recipes.value.push(mapped);
+      }
+      return mapped;
+    } catch {
+      return recipes.value.find((r) => r.id === id) || null;
+    }
+  }
+
   function addRecipe(newRecipe: Recipe) {
     recipes.value.unshift(newRecipe);
     saveRecipesToStorage();
@@ -127,6 +151,7 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
   return {
     addRecipe,
     error,
+    fetchRecipeById,
     fetchRecipes,
     isLoading,
     recipes,

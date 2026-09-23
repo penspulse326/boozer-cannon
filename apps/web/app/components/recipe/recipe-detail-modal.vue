@@ -7,12 +7,20 @@ import AbvStructureMeter from '~/components/recipe/abv-structure-meter.vue';
 import TechniqueButtons from '~/components/recipe/technique-buttons.vue';
 import { useImageFallback } from '~/composables/useImageFallback';
 import { useModalLock } from '~/composables/useModalLock';
+import { useRecipeStore } from '~/composables/useRecipeStore';
 import { useTaxonomy } from '~/composables/useTaxonomy';
 import { calculateRecipeABV } from '~/utils/abvEngine';
 
-const props = defineProps<{
-  recipe: null | Recipe;
-}>();
+const props = withDefaults(
+  defineProps<{
+    recipe?: null | Recipe;
+    recipeId?: null | string;
+  }>(),
+  {
+    recipe: null,
+    recipeId: null,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -20,30 +28,46 @@ const emit = defineEmits<{
   (e: 'toggle-like', recipeId: string): void;
 }>();
 
+const { fetchRecipeById } = useRecipeStore();
 const { getFlavorInfo } = useTaxonomy();
 const { defaultImage, onImageError } = useImageFallback();
 
+const fetchedRecipe = ref<null | Recipe>(null);
 const simulatedMethod = ref<null | string>(null);
-const isModalOpen = computed(() => !!props.recipe);
+
+const currentRecipe = computed(() => props.recipe || fetchedRecipe.value);
+const isModalOpen = computed(() => !!currentRecipe.value);
 
 useModalLock(isModalOpen, () => emit('close'));
 
 watch(
-  () => props.recipe,
+  () => props.recipeId,
+  async (newId) => {
+    if (newId) {
+      fetchedRecipe.value = await fetchRecipeById(newId);
+    } else {
+      fetchedRecipe.value = null;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => currentRecipe.value,
   () => {
     simulatedMethod.value = null;
   },
 );
 
 const effectiveRecipe = computed(() => {
-  if (!props.recipe) {
+  if (!currentRecipe.value) {
     return null;
   }
   if (!simulatedMethod.value) {
-    return props.recipe;
+    return currentRecipe.value;
   }
   return {
-    ...props.recipe,
+    ...currentRecipe.value,
     method: simulatedMethod.value,
   };
 });
@@ -69,6 +93,7 @@ const standardDrinkInfo = computed(() => {
     <div
       v-if="effectiveRecipe"
       class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+      data-testid="recipe-detail-modal"
       @click.self="$emit('close')"
     >
       <div
