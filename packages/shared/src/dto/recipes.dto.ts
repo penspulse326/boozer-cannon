@@ -92,6 +92,8 @@ export interface ApiRecipeItem {
 
 export type GetRecipesQueryDto = z.infer<typeof getRecipesQuerySchema>;
 
+export type GetRecipesQueryInput = z.input<typeof getRecipesQuerySchema>;
+
 export interface PaginatedResult<T> {
   data: T[];
   meta: PaginationMeta;
