@@ -21,6 +21,13 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
   });
 
+  it('/api/recipes (GET)', async () => {
+    const res = await request(app.getHttpServer()).get('/api/recipes').expect(200);
+    expect(res.body.data).toBeDefined();
+    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(res.body.meta).toBeDefined();
+  });
+
   afterEach(async () => {
     await app.close();
   });
