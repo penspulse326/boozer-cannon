@@ -15,6 +15,12 @@ export const getRecipesQuerySchema = z.object({
   sort: z.enum(RECIPE_SORT_OPTIONS).default('newest'),
 });
 
+export const recipeIdSchema = z.string().uuid({ message: 'Invalid recipe ID format' });
+
+export const recipeIdParamSchema = z.object({
+  id: recipeIdSchema,
+});
+
 export interface ApiRecipeAuthor {
   avatarUrl?: null | string;
   id: string;
@@ -97,3 +103,5 @@ export interface PaginationMeta {
   total: number;
   totalPages: number;
 }
+
+export type RecipeIdParamDto = z.infer<typeof recipeIdParamSchema>;
