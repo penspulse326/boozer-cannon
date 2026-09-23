@@ -36,19 +36,16 @@ describe('RecipeDetailModal Component', () => {
   };
 
   it('should not render anything when recipe is null', () => {
-    // Arrange & Act
     const wrapper = mount(RecipeDetailModal, {
       props: {
         recipe: null,
       },
     });
 
-    // Assert
     expect(wrapper.find('[data-testid="recipe-detail-modal"]').exists()).toBe(false);
   });
 
   it('should render recipe details correctly when recipe is provided', () => {
-    // Arrange & Act
     const wrapper = mount(RecipeDetailModal, {
       attachTo: document.body,
       props: {
@@ -56,7 +53,6 @@ describe('RecipeDetailModal Component', () => {
       },
     });
 
-    // Assert
     expect(document.body.textContent).toContain('內格羅尼');
     expect(document.body.textContent).toContain('Negroni');
     expect(document.body.textContent).toContain('Gin');
@@ -69,7 +65,6 @@ describe('RecipeDetailModal Component', () => {
   });
 
   it('should simulate technique dilution when technique button is clicked', async () => {
-    // Arrange
     const wrapper = mount(RecipeDetailModal, {
       attachTo: document.body,
       props: {
@@ -77,10 +72,8 @@ describe('RecipeDetailModal Component', () => {
       },
     });
 
-    // Initially Stir (攪拌法) has +22% dilution
     expect(document.body.textContent).toContain('+22%');
 
-    // Act: Click "Shake 搖盪" button in TechniqueButtons
     const shakeBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
       b.textContent?.includes('Shake 搖盪'),
     );
@@ -88,10 +81,8 @@ describe('RecipeDetailModal Component', () => {
     shakeBtn?.click();
     await wrapper.vm.$nextTick();
 
-    // Assert: Shake method has +33% dilution
     expect(document.body.textContent).toContain('+33%');
 
-    // Act: Click "恢復預設" button
     const resetBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
       b.textContent?.includes('恢復預設'),
     );
@@ -99,13 +90,11 @@ describe('RecipeDetailModal Component', () => {
     resetBtn?.click();
     await wrapper.vm.$nextTick();
 
-    // Assert: Restores back to +22%
     expect(document.body.textContent).toContain('+22%');
     wrapper.unmount();
   });
 
   it('should emit toggle-like, toggle-fav, and close events', async () => {
-    // Arrange
     const wrapper = mount(RecipeDetailModal, {
       attachTo: document.body,
       props: {
@@ -113,7 +102,6 @@ describe('RecipeDetailModal Component', () => {
       },
     });
 
-    // Act: Close button
     const closeBtn = document.body.querySelector(
       'button.absolute.top-4.right-4',
     ) as HTMLButtonElement | null;
@@ -121,7 +109,6 @@ describe('RecipeDetailModal Component', () => {
     closeBtn?.click();
     expect(wrapper.emitted('close')).toBeTruthy();
 
-    // Act: Like button
     const likeBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
       b.textContent?.includes('42'),
     );
@@ -129,7 +116,6 @@ describe('RecipeDetailModal Component', () => {
     likeBtn?.click();
     expect(wrapper.emitted('toggle-like')?.[0]).toEqual([mockRecipe.id]);
 
-    // Act: Favorite button
     const favBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
       b.textContent?.includes('收藏'),
     );
