@@ -57,21 +57,22 @@ flowchart TD
 
 ---
 
-### [ ] 階段 2：垂直切片 1 —— 酒譜瀏覽、搜尋與複合過濾 (Browse & Filter Recipes)
+### [x] 階段 2：垂直切片 1 —— 酒譜瀏覽、搜尋與複合過濾 (Browse & Filter Recipes)
 
 - **目標**：建立酒譜列表與過濾 API，並於前端完成非同步 API 串接與 Loading 體驗優化。
 - **工作項目**：
-  - [ ] 2.1 後端實作 `RecipesModule`、`RecipesController` 與 `RecipesService`：
+  - [x] 2.1 後端實作 `RecipesModule`、`RecipesController` 與 `RecipesService`：
     - 端點：`GET /api/recipes`
     - 查詢參數：`search`, `base`, `flavor`, `abv`, `sort`, `page`, `limit`
     - 結合關聯表查詢材料、品牌與風味標籤，回傳結構化 JSON。
-  - [ ] 2.2 前端串接：
+  - [x] 2.2 前端串接：
     - `useRecipeStore` 改用 `$fetch` / `useFetch` 取得後端酒譜。
     - 在 `RecipeGrid` 增加 Skeleton 骨架屏載入動畫。
     - 處理連線錯誤與重試機制。
-- **預計 Commit**：
+- **完成 Commit**：
   ```bash
-  feat(server): implement recipes listing and filter api
+  feat(shared): add shared zod dtos and zod validation pipe
+  feat(server): implement recipes listing and filter api with tdd
   feat(web): integrate recipes api with loading skeleton and server-side filtering
   ```
 
