@@ -1,4 +1,4 @@
-import type { ApiRecipeItem, GetRecipesQueryDto, PaginatedResult } from '@boozer/shared/dto';
+import type { GetRecipesQueryDto, PaginatedResult, RecipeDto } from '@boozer/shared/dto';
 
 import { onMounted, ref } from 'vue';
 
@@ -6,7 +6,7 @@ import type { Recipe } from '~/types/cocktail';
 
 import { useToast } from '~/composables/useToast';
 import { STORAGE_KEY } from '~/utils/constants';
-import { mapApiRecipeToRecipe } from '~/utils/recipeAdapter';
+import { mapRecipeDtoToRecipe } from '~/utils/recipeAdapter';
 import { DEFAULT_RECIPES } from '~/utils/seedData';
 
 const recipes = ref<Recipe[]>([]);
@@ -57,14 +57,14 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     error.value = null;
 
     try {
-      const res = await $fetch<PaginatedResult<ApiRecipeItem>>('/api/recipes', {
+      const res = await $fetch<PaginatedResult<RecipeDto>>('/api/recipes', {
         query,
       });
 
       const { favorites, likes } = getLocalInteractions();
 
       recipes.value = (res.data || []).map((item) => {
-        const mapped = mapApiRecipeToRecipe(item);
+        const mapped = mapRecipeDtoToRecipe(item);
         if (favorites.has(mapped.id)) {
           mapped.isFav = true;
         }
@@ -93,9 +93,9 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
 
   async function fetchRecipeById(id: string): Promise<null | Recipe> {
     try {
-      const item = await $fetch<ApiRecipeItem>(`/api/recipes/${id}`);
+      const item = await $fetch<RecipeDto>(`/api/recipes/${id}`);
       const { favorites, likes } = getLocalInteractions();
-      const mapped = mapApiRecipeToRecipe(item);
+      const mapped = mapRecipeDtoToRecipe(item);
       if (favorites.has(mapped.id)) {
         mapped.isFav = true;
       }

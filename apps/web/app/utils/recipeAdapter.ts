@@ -1,12 +1,13 @@
-import type { ApiRecipeItem } from '@boozer/shared/dto';
+import type { RecipeDto } from '@boozer/shared/dto';
 
 import type { Recipe } from '~/types/cocktail';
 
-export function mapApiRecipeToRecipe(item: ApiRecipeItem): Recipe {
+export function mapRecipeDtoToRecipe(item: RecipeDto): Recipe {
+  const firstGarnish = item.garnishes[0];
   const garnish =
-    item.garnishes?.[0]?.garnishCustom ||
-    item.garnishes?.[0]?.garnishEntity?.nameZh ||
-    item.garnishes?.[0]?.garnishEntity?.nameEn ||
+    firstGarnish?.garnishCustom ||
+    firstGarnish?.garnishEntity?.nameZh ||
+    firstGarnish?.garnishEntity?.nameEn ||
     '';
 
   const glass =
@@ -15,18 +16,18 @@ export function mapApiRecipeToRecipe(item: ApiRecipeItem): Recipe {
   const ice = item.iceCustom || item.iceEntity?.nameZh || item.iceEntity?.nameEn || undefined;
 
   return {
-    author: item.author?.name || '匿名調酒師',
+    author: item.author.name || '匿名調酒師',
     base: item.baseSpirit,
     calculatedAbv: item.calculatedAbv ? Number(item.calculatedAbv) : undefined,
     createdAt: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
     desc: item.story || '',
-    flavors: item.recipeFlavors?.map((rf) => rf.flavorId || rf.flavor?.id || '') || [],
+    flavors: item.recipeFlavors.map((rf) => rf.flavorId || rf.flavor?.id || ''),
     garnish,
     glass,
     ice,
     id: item.id,
     image: item.imageUrl || undefined,
-    ingredients: (item.ingredients || []).map((ing) => ({
+    ingredients: item.ingredients.map((ing) => ({
       abv: ing.abv ? Number(ing.abv) : 0,
       amount: String(ing.amount),
       brandId: ing.brandEntityId || undefined,
@@ -36,10 +37,12 @@ export function mapApiRecipeToRecipe(item: ApiRecipeItem): Recipe {
     })),
     isFav: false,
     isLiked: false,
-    likes: item.likesCount || 0,
+    likes: item.likesCount,
     method: item.method,
     nameEn: item.nameEn || undefined,
     nameZh: item.nameZh || item.nameEn || '無名調酒',
     steps: Array.isArray(item.instructions) ? item.instructions : [],
   };
 }
+
+export const mapApiRecipeToRecipe = mapRecipeDtoToRecipe;
