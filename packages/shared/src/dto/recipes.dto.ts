@@ -21,18 +21,6 @@ export const recipeIdParamSchema = z.object({
   id: recipeIdSchema,
 });
 
-export type ApiRecipeAuthor = RecipeAuthorDto;
-
-export type ApiRecipeEntity = RecipeEntityDto;
-
-export type ApiRecipeFlavorRelation = RecipeFlavorDto;
-
-export type ApiRecipeGarnish = RecipeGarnishDto;
-
-export type ApiRecipeIngredient = RecipeIngredientDto;
-
-export type ApiRecipeItem = RecipeDto;
-
 export type GetRecipesQueryDto = z.infer<typeof getRecipesQuerySchema>;
 export type GetRecipesQueryInput = z.input<typeof getRecipesQuerySchema>;
 export interface PaginatedResult<T> {

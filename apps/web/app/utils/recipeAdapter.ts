@@ -44,5 +44,3 @@ export function mapRecipeDtoToRecipe(item: RecipeDto): Recipe {
     steps: Array.isArray(item.instructions) ? item.instructions : [],
   };
 }
-
-export const mapApiRecipeToRecipe = mapRecipeDtoToRecipe;
