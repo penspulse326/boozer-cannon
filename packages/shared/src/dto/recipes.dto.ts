@@ -21,89 +21,96 @@ export const recipeIdParamSchema = z.object({
   id: recipeIdSchema,
 });
 
-export interface ApiRecipeAuthor {
-  avatarUrl?: null | string;
-  id: string;
-  name: string;
-}
+export type ApiRecipeAuthor = RecipeAuthorDto;
 
-export interface ApiRecipeEntity {
-  id?: string;
-  nameEn?: null | string;
-  nameZh?: null | string;
-}
+export type ApiRecipeEntity = RecipeEntityDto;
 
-export interface ApiRecipeFlavorRelation {
-  flavor?: null | {
-    id: string;
-    nameEn?: null | string;
-    nameZh?: null | string;
-  };
-  flavorId: string;
-}
+export type ApiRecipeFlavorRelation = RecipeFlavorDto;
 
-export interface ApiRecipeGarnish {
-  garnishCustom?: null | string;
-  garnishEntity?: ApiRecipeEntity | null;
-  garnishEntityId?: null | string;
-  id?: string;
-}
+export type ApiRecipeGarnish = RecipeGarnishDto;
 
-export interface ApiRecipeIngredient {
-  abv?: null | number | string;
-  amount: number | string;
-  brandCustom?: null | string;
-  brandEntity?: ApiRecipeEntity | null;
-  brandEntityId?: null | string;
-  id?: string;
-  ingredientEntity?: ApiRecipeEntity | null;
-  ingredientEntityId?: null | string;
-  name: string;
-  unit: string;
-}
+export type ApiRecipeIngredient = RecipeIngredientDto;
 
-export interface ApiRecipeItem {
-  author?: ApiRecipeAuthor | null;
-  authorId?: string;
-  baseSpirit: string;
-  calculatedAbv?: null | number | string;
-  createdAt?: Date | string;
-  dilutionRatio?: null | number | string;
-  favoritesCount?: number;
-  garnishes?: ApiRecipeGarnish[];
-  glassCustom?: null | string;
-  glassEntity?: ApiRecipeEntity | null;
-  glassEntityId?: null | string;
-  iceCustom?: null | string;
-  iceEntity?: ApiRecipeEntity | null;
-  iceEntityId?: null | string;
-  id: string;
-  imageUrl?: null | string;
-  ingredients?: ApiRecipeIngredient[];
-  instructions?: null | string[];
-  likesCount?: number;
-  method: string;
-  nameEn?: null | string;
-  nameZh?: null | string;
-  recipeFlavors?: ApiRecipeFlavorRelation[];
-  story?: null | string;
-  updatedAt?: Date | string;
-}
+export type ApiRecipeItem = RecipeDto;
 
 export type GetRecipesQueryDto = z.infer<typeof getRecipesQuerySchema>;
-
 export type GetRecipesQueryInput = z.input<typeof getRecipesQuerySchema>;
-
 export interface PaginatedResult<T> {
   data: T[];
   meta: PaginationMeta;
 }
-
 export interface PaginationMeta {
   limit: number;
   page: number;
   total: number;
   totalPages: number;
 }
+export interface RecipeAuthorDto {
+  avatarUrl: null | string;
+  id: string;
+  name: string;
+}
+export interface RecipeDto {
+  author: RecipeAuthorDto;
+  authorId: string;
+  baseSpirit: string;
+  calculatedAbv: null | number | string;
+  createdAt: Date | string;
+  dilutionRatio: null | number | string;
+  favoritesCount: number;
+  garnishes: RecipeGarnishDto[];
+  glassCustom: null | string;
+  glassEntity: null | RecipeEntityDto;
+  glassEntityId: null | string;
+  iceCustom: null | string;
+  iceEntity: null | RecipeEntityDto;
+  iceEntityId: null | string;
+  id: string;
+  imageUrl: null | string;
+  ingredients: RecipeIngredientDto[];
+  instructions: null | string[];
+  likesCount: number;
+  method: string;
+  nameEn: null | string;
+  nameZh: null | string;
+  recipeFlavors: RecipeFlavorDto[];
+  story: null | string;
+  updatedAt: Date | string;
+}
+
+export interface RecipeEntityDto {
+  id: string;
+  nameEn: string;
+  nameZh: null | string;
+}
+
+export interface RecipeFlavorDto {
+  flavor: null | {
+    id: string;
+    nameEn: string;
+    nameZh: string;
+  };
+  flavorId: string;
+}
+
+export interface RecipeGarnishDto {
+  garnishCustom: null | string;
+  garnishEntity: null | RecipeEntityDto;
+  garnishEntityId: null | string;
+  id: string;
+}
 
 export type RecipeIdParamDto = z.infer<typeof recipeIdParamSchema>;
+
+export interface RecipeIngredientDto {
+  abv: null | number | string;
+  amount: number | string;
+  brandCustom: null | string;
+  brandEntity: null | RecipeEntityDto;
+  brandEntityId: null | string;
+  id: string;
+  ingredientEntity: null | RecipeEntityDto;
+  ingredientEntityId: null | string;
+  name: string;
+  unit: string;
+}
