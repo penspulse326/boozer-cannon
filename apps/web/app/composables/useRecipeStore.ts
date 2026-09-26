@@ -1,6 +1,12 @@
-import type { GetRecipesQueryDto, PaginatedResult, RecipeDto } from '@boozer/shared/dto';
+import type {
+  GetRecipesQueryDto,
+  PaginatedResult,
+  RecipeDto,
+  ToggleFavoriteResponseDto,
+  ToggleLikeResponseDto,
+} from '@boozer/shared/dto';
 
-import { onMounted, ref } from 'vue';
+import { getCurrentInstance, onMounted, ref } from 'vue';
 
 import type { Recipe } from '~/types/cocktail';
 
@@ -13,6 +19,8 @@ const recipes = ref<Recipe[]>([]);
 const isLoading = ref(false);
 const error = ref<null | string>(null);
 let isInitialized = false;
+
+const getFetch = () => (globalThis.$fetch || $fetch) as typeof $fetch;
 
 export function useRecipeStore(onNotify?: (message: string, icon?: string) => void) {
   const { showToast } = useToast();
@@ -57,7 +65,7 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     error.value = null;
 
     try {
-      const res = await $fetch<PaginatedResult<RecipeDto>>('/api/recipes', {
+      const res = await getFetch()<PaginatedResult<RecipeDto>>('/api/recipes', {
         query,
       });
 
@@ -93,7 +101,7 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
 
   async function fetchRecipeById(id: string): Promise<null | Recipe> {
     try {
-      const item = await $fetch<RecipeDto>(`/api/recipes/${id}`);
+      const item = await getFetch()<RecipeDto>(`/api/recipes/${id}`);
       const { favorites, likes } = getLocalInteractions();
       const mapped = mapRecipeDtoToRecipe(item);
       if (favorites.has(mapped.id)) {
@@ -121,32 +129,66 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     notify('成功發布新酒譜！', 'fa-circle-check');
   }
 
-  function toggleFavorite(id: string) {
+  async function toggleFavorite(id: string) {
     const recipe = recipes.value.find((r) => r.id === id);
     if (!recipe) {
       return;
     }
-    recipe.isFav = !recipe.isFav;
+
+    const previousFav = recipe.isFav;
+    recipe.isFav = !previousFav;
     saveRecipesToStorage();
     notify(recipe.isFav ? '已加入我的收藏' : '已從收藏中移除', 'fa-bookmark');
+
+    try {
+      const res = await getFetch()<ToggleFavoriteResponseDto>(`/api/recipes/${id}/favorite`, {
+        method: 'POST',
+      });
+      recipe.isFav = res.isFavorite;
+      saveRecipesToStorage();
+    } catch {
+      recipe.isFav = previousFav;
+      saveRecipesToStorage();
+      notify('收藏狀態更新失敗，請稍後重試', 'fa-circle-exclamation');
+    }
   }
 
-  function toggleLike(id: string) {
+  async function toggleLike(id: string) {
     const recipe = recipes.value.find((r) => r.id === id);
     if (!recipe) {
       return;
     }
-    recipe.isLiked = !recipe.isLiked;
-    recipe.likes = (recipe.likes || 0) + (recipe.isLiked ? 1 : -1);
+
+    const previousLiked = recipe.isLiked;
+    const previousLikes = recipe.likes || 0;
+
+    recipe.isLiked = !previousLiked;
+    recipe.likes = Math.max(0, previousLikes + (recipe.isLiked ? 1 : -1));
     saveRecipesToStorage();
+
+    try {
+      const res = await getFetch()<ToggleLikeResponseDto>(`/api/recipes/${id}/like`, {
+        method: 'POST',
+      });
+      recipe.isLiked = res.isLiked;
+      recipe.likes = res.likesCount;
+      saveRecipesToStorage();
+    } catch {
+      recipe.isLiked = previousLiked;
+      recipe.likes = previousLikes;
+      saveRecipesToStorage();
+      notify('按讚失敗，請稍後重試', 'fa-circle-exclamation');
+    }
   }
 
-  onMounted(() => {
-    if (!isInitialized) {
-      fetchRecipes();
-      isInitialized = true;
-    }
-  });
+  if (getCurrentInstance()) {
+    onMounted(() => {
+      if (!isInitialized) {
+        fetchRecipes();
+        isInitialized = true;
+      }
+    });
+  }
 
   return {
     addRecipe,
