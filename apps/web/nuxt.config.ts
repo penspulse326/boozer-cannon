@@ -30,7 +30,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   routeRules: {
     '/api/**': {
-      proxy: process.env.API_PROXY_TARGET || 'http://localhost:3000/api/**',
+      proxy: process.env.API_PROXY_TARGET || 'http://localhost:3001/api/**',
     },
   },
   vite: {
