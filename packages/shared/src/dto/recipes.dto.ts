@@ -21,12 +21,21 @@ export const recipeIdParamSchema = z.object({
   id: recipeIdSchema,
 });
 
+export const recipeInteractionDtoSchema = z
+  .object({
+    userId: z.string().uuid({ message: 'Invalid user ID format' }).optional(),
+  })
+  .default({});
+
 export type GetRecipesQueryDto = z.infer<typeof getRecipesQuerySchema>;
+
 export type GetRecipesQueryInput = z.input<typeof getRecipesQuerySchema>;
+
 export interface PaginatedResult<T> {
   data: T[];
   meta: PaginationMeta;
 }
+
 export interface PaginationMeta {
   limit: number;
   page: number;
@@ -65,13 +74,11 @@ export interface RecipeDto {
   story: null | string;
   updatedAt: Date | string;
 }
-
 export interface RecipeEntityDto {
   id: string;
   nameEn: string;
   nameZh: null | string;
 }
-
 export interface RecipeFlavorDto {
   flavor: null | {
     id: string;
@@ -80,7 +87,6 @@ export interface RecipeFlavorDto {
   };
   flavorId: string;
 }
-
 export interface RecipeGarnishDto {
   garnishCustom: null | string;
   garnishEntity: null | RecipeEntityDto;
@@ -101,4 +107,18 @@ export interface RecipeIngredientDto {
   ingredientEntityId: null | string;
   name: string;
   unit: string;
+}
+
+export type RecipeInteractionDto = z.infer<typeof recipeInteractionDtoSchema>;
+
+export interface ToggleFavoriteResponseDto {
+  favoritesCount: number;
+  isFavorite: boolean;
+  recipeId: string;
+}
+
+export interface ToggleLikeResponseDto {
+  isLiked: boolean;
+  likesCount: number;
+  recipeId: string;
 }

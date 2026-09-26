@@ -137,4 +137,86 @@ describe('RecipesService', () => {
       `Recipe with ID "${nonExistentId}" not found`,
     );
   });
+
+  it('Scenario 8: should toggle like on and off for a recipe and update likesCount', async () => {
+    const negroniId = '10000000-0000-0000-0000-000000000001';
+    const testUserId = '00000000-0000-0000-0000-000000000001';
+
+    const initialRecipe = await service.findOne(negroniId);
+    const initialLikes = initialRecipe.likesCount;
+
+    const likeResult = await service.toggleLike(negroniId, testUserId);
+    expect(likeResult).toEqual({
+      isLiked: true,
+      likesCount: initialLikes + 1,
+      recipeId: negroniId,
+    });
+
+    const updatedRecipe = await service.findOne(negroniId);
+    expect(updatedRecipe.likesCount).toBe(initialLikes + 1);
+
+    const unlikeResult = await service.toggleLike(negroniId, testUserId);
+    expect(unlikeResult).toEqual({
+      isLiked: false,
+      likesCount: initialLikes,
+      recipeId: negroniId,
+    });
+
+    const finalRecipe = await service.findOne(negroniId);
+    expect(finalRecipe.likesCount).toBe(initialLikes);
+  });
+
+  it('Scenario 9: should toggle favorite on and off for a recipe and update favoritesCount', async () => {
+    const negroniId = '10000000-0000-0000-0000-000000000001';
+    const testUserId = '00000000-0000-0000-0000-000000000001';
+
+    const initialRecipe = await service.findOne(negroniId);
+    const initialFavorites = initialRecipe.favoritesCount;
+
+    const favResult = await service.toggleFavorite(negroniId, testUserId);
+    expect(favResult).toEqual({
+      favoritesCount: initialFavorites + 1,
+      isFavorite: true,
+      recipeId: negroniId,
+    });
+
+    const updatedRecipe = await service.findOne(negroniId);
+    expect(updatedRecipe.favoritesCount).toBe(initialFavorites + 1);
+
+    const unfavResult = await service.toggleFavorite(negroniId, testUserId);
+    expect(unfavResult).toEqual({
+      favoritesCount: initialFavorites,
+      isFavorite: false,
+      recipeId: negroniId,
+    });
+
+    const finalRecipe = await service.findOne(negroniId);
+    expect(finalRecipe.favoritesCount).toBe(initialFavorites);
+  });
+
+  it('Scenario 10: should throw NotFoundException when toggling like or favorite on non-existent recipe', async () => {
+    const nonExistentRecipeId = '00000000-0000-0000-0000-000000000000';
+    const testUserId = '00000000-0000-0000-0000-000000000001';
+
+    await expect(service.toggleLike(nonExistentRecipeId, testUserId)).rejects.toThrow(
+      `Recipe with ID "${nonExistentRecipeId}" not found`,
+    );
+
+    await expect(service.toggleFavorite(nonExistentRecipeId, testUserId)).rejects.toThrow(
+      `Recipe with ID "${nonExistentRecipeId}" not found`,
+    );
+  });
+
+  it('Scenario 11: should throw NotFoundException when toggling like or favorite with non-existent user', async () => {
+    const negroniId = '10000000-0000-0000-0000-000000000001';
+    const nonExistentUserId = '00000000-0000-0000-0000-000000000099';
+
+    await expect(service.toggleLike(negroniId, nonExistentUserId)).rejects.toThrow(
+      `User with ID "${nonExistentUserId}" not found`,
+    );
+
+    await expect(service.toggleFavorite(negroniId, nonExistentUserId)).rejects.toThrow(
+      `User with ID "${nonExistentUserId}" not found`,
+    );
+  });
 });

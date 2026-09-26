@@ -8,7 +8,6 @@ import { RecipesService } from './recipes.service.ts';
 
 describe('RecipesController', () => {
   let controller: RecipesController;
-  let service: RecipesService;
 
   const mockRecipesService = {
     findAll: vi.fn().mockResolvedValue({
@@ -18,6 +17,16 @@ describe('RecipesController', () => {
     findOne: vi.fn().mockResolvedValue({
       id: '10000000-0000-0000-0000-000000000001',
       nameEn: 'Negroni',
+    }),
+    toggleFavorite: vi.fn().mockResolvedValue({
+      favoritesCount: 1,
+      isFavorite: true,
+      recipeId: '10000000-0000-0000-0000-000000000001',
+    }),
+    toggleLike: vi.fn().mockResolvedValue({
+      isLiked: true,
+      likesCount: 1,
+      recipeId: '10000000-0000-0000-0000-000000000001',
     }),
   };
 
@@ -33,7 +42,6 @@ describe('RecipesController', () => {
     }).compile();
 
     controller = module.get<RecipesController>(RecipesController);
-    service = module.get<RecipesService>(RecipesService);
   });
 
   it('should delegate query parameters to RecipesService.findAll with parsed numbers', async () => {
@@ -47,7 +55,7 @@ describe('RecipesController', () => {
 
     const result = await controller.getRecipes(query);
 
-    expect(service.findAll).toHaveBeenCalledWith(query);
+    expect(mockRecipesService.findAll).toHaveBeenCalledWith(query);
     expect(result.data.length).toBe(1);
     expect(result.data[0]?.nameEn).toBe('Negroni');
   });
@@ -57,8 +65,36 @@ describe('RecipesController', () => {
 
     const result = await controller.getRecipe(recipeId);
 
-    expect(service.findOne).toHaveBeenCalledWith(recipeId);
+    expect(mockRecipesService.findOne).toHaveBeenCalledWith(recipeId);
     expect(result).toBeDefined();
     expect(result.id).toBe(recipeId);
+  });
+
+  it('should delegate id and optional userId to RecipesService.toggleLike', async () => {
+    const recipeId = '10000000-0000-0000-0000-000000000001';
+    const userId = '00000000-0000-0000-0000-000000000002';
+
+    const result = await controller.toggleLike(recipeId, { userId });
+
+    expect(mockRecipesService.toggleLike).toHaveBeenCalledWith(recipeId, userId);
+    expect(result).toEqual({
+      isLiked: true,
+      likesCount: 1,
+      recipeId,
+    });
+  });
+
+  it('should delegate id and optional userId to RecipesService.toggleFavorite', async () => {
+    const recipeId = '10000000-0000-0000-0000-000000000001';
+    const userId = '00000000-0000-0000-0000-000000000002';
+
+    const result = await controller.toggleFavorite(recipeId, { userId });
+
+    expect(mockRecipesService.toggleFavorite).toHaveBeenCalledWith(recipeId, userId);
+    expect(result).toEqual({
+      favoritesCount: 1,
+      isFavorite: true,
+      recipeId,
+    });
   });
 });

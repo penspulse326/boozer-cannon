@@ -1,10 +1,17 @@
-import type { GetRecipesQueryInput, PaginatedResult } from '@boozer/shared/dto';
+import type {
+  GetRecipesQueryInput,
+  PaginatedResult,
+  ToggleFavoriteResponseDto,
+  ToggleLikeResponseDto,
+} from '@boozer/shared/dto';
 
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.provider.js';
 import * as schema from '../db/schema.ts';
+
+export const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001';
 
 export type RecipeWithRelations = schema.Recipe & {
   author: schema.User;
@@ -99,6 +106,144 @@ export class RecipesService {
     }
 
     return recipe;
+  }
+
+  async toggleFavorite(
+    recipeId: string,
+    userId: string = DEFAULT_USER_ID,
+  ): Promise<ToggleFavoriteResponseDto> {
+    return await this.db.transaction(async (tx) => {
+      const [recipe] = await tx
+        .select({ favoritesCount: schema.recipes.favoritesCount, id: schema.recipes.id })
+        .from(schema.recipes)
+        .where(eq(schema.recipes.id, recipeId));
+
+      if (!recipe) {
+        throw new NotFoundException(`Recipe with ID "${recipeId}" not found`);
+      }
+
+      const [user] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, userId));
+
+      if (!user) {
+        throw new NotFoundException(`User with ID "${userId}" not found`);
+      }
+
+      const [existingFav] = await tx
+        .select()
+        .from(schema.recipeFavorites)
+        .where(
+          and(
+            eq(schema.recipeFavorites.recipeId, recipeId),
+            eq(schema.recipeFavorites.userId, userId),
+          ),
+        );
+
+      if (existingFav) {
+        await tx
+          .delete(schema.recipeFavorites)
+          .where(
+            and(
+              eq(schema.recipeFavorites.recipeId, recipeId),
+              eq(schema.recipeFavorites.userId, userId),
+            ),
+          );
+
+        const favoritesCount = Math.max(0, recipe.favoritesCount - 1);
+        await tx
+          .update(schema.recipes)
+          .set({ favoritesCount })
+          .where(eq(schema.recipes.id, recipeId));
+
+        return {
+          favoritesCount,
+          isFavorite: false,
+          recipeId,
+        };
+      }
+
+      await tx.insert(schema.recipeFavorites).values({
+        recipeId,
+        userId,
+      });
+
+      const favoritesCount = recipe.favoritesCount + 1;
+      await tx
+        .update(schema.recipes)
+        .set({ favoritesCount })
+        .where(eq(schema.recipes.id, recipeId));
+
+      return {
+        favoritesCount,
+        isFavorite: true,
+        recipeId,
+      };
+    });
+  }
+
+  async toggleLike(
+    recipeId: string,
+    userId: string = DEFAULT_USER_ID,
+  ): Promise<ToggleLikeResponseDto> {
+    return await this.db.transaction(async (tx) => {
+      const [recipe] = await tx
+        .select({ id: schema.recipes.id, likesCount: schema.recipes.likesCount })
+        .from(schema.recipes)
+        .where(eq(schema.recipes.id, recipeId));
+
+      if (!recipe) {
+        throw new NotFoundException(`Recipe with ID "${recipeId}" not found`);
+      }
+
+      const [user] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, userId));
+
+      if (!user) {
+        throw new NotFoundException(`User with ID "${userId}" not found`);
+      }
+
+      const [existingLike] = await tx
+        .select()
+        .from(schema.recipeLikes)
+        .where(
+          and(eq(schema.recipeLikes.recipeId, recipeId), eq(schema.recipeLikes.userId, userId)),
+        );
+
+      if (existingLike) {
+        await tx
+          .delete(schema.recipeLikes)
+          .where(
+            and(eq(schema.recipeLikes.recipeId, recipeId), eq(schema.recipeLikes.userId, userId)),
+          );
+
+        const likesCount = Math.max(0, recipe.likesCount - 1);
+        await tx.update(schema.recipes).set({ likesCount }).where(eq(schema.recipes.id, recipeId));
+
+        return {
+          isLiked: false,
+          likesCount,
+          recipeId,
+        };
+      }
+
+      await tx.insert(schema.recipeLikes).values({
+        recipeId,
+        userId,
+      });
+
+      const likesCount = recipe.likesCount + 1;
+      await tx.update(schema.recipes).set({ likesCount }).where(eq(schema.recipes.id, recipeId));
+
+      return {
+        isLiked: true,
+        likesCount,
+        recipeId,
+      };
+    });
   }
 
   private buildOrderBy(sort?: GetRecipesQueryInput['sort']) {
