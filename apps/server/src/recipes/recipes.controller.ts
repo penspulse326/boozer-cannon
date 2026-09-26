@@ -1,4 +1,6 @@
 import {
+  type CreateRecipeDto,
+  createRecipeSchema,
   type GetRecipesQueryDto,
   getRecipesQuerySchema,
   recipeIdSchema,
@@ -13,6 +15,12 @@ import { RecipesService } from './recipes.service.ts';
 @Controller('api/recipes')
 export class RecipesController {
   constructor(private readonly recipesService: RecipesService) {}
+
+  @Post()
+  @UsePipes(new ZodValidationPipe(createRecipeSchema))
+  async createRecipe(@Body() dto: CreateRecipeDto) {
+    return await this.recipesService.create(dto);
+  }
 
   @Get(':id')
   async getRecipe(@Param('id', new ZodValidationPipe(recipeIdSchema)) id: string) {

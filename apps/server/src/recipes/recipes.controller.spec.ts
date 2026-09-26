@@ -1,4 +1,4 @@
-import type { GetRecipesQueryDto } from '@boozer/shared/dto';
+import type { CreateRecipeDto, GetRecipesQueryDto } from '@boozer/shared/dto';
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +10,10 @@ describe('RecipesController', () => {
   let controller: RecipesController;
 
   const mockRecipesService = {
+    create: vi.fn().mockResolvedValue({
+      id: 'new-id',
+      nameEn: 'New Cocktail',
+    }),
     findAll: vi.fn().mockResolvedValue({
       data: [{ id: '1', nameEn: 'Negroni' }],
       meta: { limit: 10, page: 1, total: 1, totalPages: 1 },
@@ -96,5 +100,23 @@ describe('RecipesController', () => {
       isFavorite: true,
       recipeId,
     });
+  });
+
+  it('should delegate create payload to RecipesService.create', async () => {
+    const dto: CreateRecipeDto = {
+      baseSpirit: 'Gin',
+      flavors: [],
+      garnishes: [],
+      ingredients: [{ abv: 40, amount: 45, name: 'Gin', sortOrder: 1, unit: 'ml' }],
+      instructions: ['Stir with ice'],
+      method: 'Stir',
+      nameEn: 'Martini',
+    };
+
+    const result = await controller.createRecipe(dto);
+
+    expect(mockRecipesService.create).toHaveBeenCalledWith(dto);
+    expect(result).toBeDefined();
+    expect(result.id).toBe('new-id');
   });
 });

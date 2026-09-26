@@ -1,3 +1,5 @@
+import type { CreateRecipeDto } from '@boozer/shared/dto';
+
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
@@ -217,6 +219,81 @@ describe('RecipesService', () => {
 
     await expect(service.toggleFavorite(negroniId, nonExistentUserId)).rejects.toThrow(
       `User with ID "${nonExistentUserId}" not found`,
+    );
+  });
+
+  it('Scenario 12: should create a new custom recipe with ingredients and flavors in transaction', async () => {
+    const input: CreateRecipeDto = {
+      authorId: '00000000-0000-0000-0000-000000000001',
+      base: 'Gin',
+      baseSpirit: 'Gin',
+      calculatedAbv: 24.5,
+      desc: '我的自訂特調琴酒',
+      dilutionRatio: 1.25,
+      flavors: ['flavor_sour', 'flavor_refresh'],
+      garnish: '新鮮迷迭香',
+      garnishes: [],
+      glass: '馬丁尼杯',
+      ice: '無冰',
+      image: 'https://images.unsplash.com/photo-custom-gin',
+      ingredients: [
+        {
+          abv: 47.3,
+          amount: 50,
+          brandCustom: 'Tanqueray No. 10',
+          brandId: 'brand_tanqueray',
+          name: '琴酒',
+          sortOrder: 1,
+          unit: 'ml',
+        },
+        {
+          abv: 0,
+          amount: 25,
+          brandCustom: '新鮮現榨青檸',
+          name: '青檸汁',
+          sortOrder: 2,
+          unit: 'ml',
+        },
+      ],
+      instructions: ['搖盪均勻後倒入杯中'],
+      method: 'Shake (搖盪法)',
+      nameEn: 'Custom Herb Gimlet',
+      nameZh: '草本吉姆雷特特調',
+    };
+
+    const created = await service.create(input);
+
+    expect(created).toBeDefined();
+    expect(created.id).toBeDefined();
+    expect(created.nameZh).toBe('草本吉姆雷特特調');
+    expect(created.nameEn).toBe('Custom Herb Gimlet');
+    expect(created.baseSpirit).toBe('Gin');
+    expect(created.story).toBe('我的自訂特調琴酒');
+    expect(created.author.id).toBe('00000000-0000-0000-0000-000000000001');
+    expect(created.ingredients.length).toBe(2);
+    expect(created.recipeFlavors.length).toBe(2);
+    expect(created.garnishes.length).toBe(1);
+    expect(created.garnishes[0]?.garnishCustom).toBe('新鮮迷迭香');
+
+    // Clean up
+    await pool.query('DELETE FROM recipes WHERE id = $1', [created.id]);
+  });
+
+  it('Scenario 13: should throw NotFoundException when authorId does not exist', async () => {
+    const input: CreateRecipeDto = {
+      authorId: '00000000-0000-0000-0000-000000000099',
+      base: 'Vodka',
+      baseSpirit: 'Vodka',
+      flavors: [],
+      garnishes: [],
+      ingredients: [{ abv: 40, amount: 50, name: '伏特加', sortOrder: 1, unit: 'ml' }],
+      instructions: [],
+      method: 'Build',
+      nameEn: 'Ghost Author Recipe',
+    };
+
+    await expect(service.create(input)).rejects.toThrow(
+      'User with ID "00000000-0000-0000-0000-000000000099" not found',
     );
   });
 });

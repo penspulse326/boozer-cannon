@@ -1,4 +1,5 @@
 import type {
+  CreateRecipeDto,
   GetRecipesQueryInput,
   PaginatedResult,
   ToggleFavoriteResponseDto,
@@ -28,6 +29,131 @@ export type RecipeWithRelations = schema.Recipe & {
 @Injectable()
 export class RecipesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+
+  async create(data: CreateRecipeDto): Promise<RecipeWithRelations> {
+    const newRecipeId = await this.db.transaction(async (tx) => {
+      const authorId = data.authorId || DEFAULT_USER_ID;
+
+      const [user] = await tx
+        .select({ id: schema.users.id })
+        .from(schema.users)
+        .where(eq(schema.users.id, authorId));
+
+      if (!user) {
+        throw new NotFoundException(`User with ID "${authorId}" not found`);
+      }
+
+      const baseSpirit = data.baseSpirit || data.base || '';
+      const nameZh = data.nameZh || null;
+      const nameEn = data.nameEn || null;
+      const story = data.story || data.desc || null;
+      const imageUrl = (data.imageUrl || data.image || '').slice(0, 500) || null;
+      const calculatedAbv =
+        data.calculatedAbv !== undefined && data.calculatedAbv !== null
+          ? String(data.calculatedAbv)
+          : null;
+      const dilutionRatio =
+        data.dilutionRatio !== undefined && data.dilutionRatio !== null
+          ? String(data.dilutionRatio)
+          : null;
+      const glassCustom = data.glassCustom || data.glass || null;
+      const iceCustom = data.iceCustom || data.ice || null;
+      const instructions =
+        data.instructions && data.instructions.length > 0
+          ? data.instructions
+          : data.steps && data.steps.length > 0
+            ? data.steps
+            : [];
+
+      const [recipe] = await tx
+        .insert(schema.recipes)
+        .values({
+          authorId,
+          baseSpirit,
+          calculatedAbv,
+          dilutionRatio,
+          glassCustom,
+          glassEntityId: data.glassEntityId || null,
+          iceCustom,
+          iceEntityId: data.iceEntityId || null,
+          imageUrl,
+          instructions,
+          method: data.method,
+          nameEn,
+          nameZh,
+          story,
+        })
+        .returning({ id: schema.recipes.id });
+
+      if (data.ingredients && data.ingredients.length > 0) {
+        const ingredientsToInsert = data.ingredients.map((ing, idx) => ({
+          abv: String(ing.abv ?? 0),
+          amount: String(ing.amount),
+          brandCustom: ing.brandCustom || ing.brandText || null,
+          brandEntityId: ing.brandEntityId || ing.brandId || null,
+          ingredientEntityId: ing.ingredientEntityId || null,
+          name: ing.name,
+          recipeId: recipe.id,
+          sortOrder: ing.sortOrder ?? idx + 1,
+          unit: ing.unit || 'ml',
+        }));
+
+        await tx.insert(schema.recipeIngredients).values(ingredientsToInsert);
+      }
+
+      const garnishesToInsert: {
+        garnishCustom: null | string;
+        garnishEntityId: null | string;
+        recipeId: string;
+      }[] = [];
+
+      if (data.garnishes && data.garnishes.length > 0) {
+        for (const g of data.garnishes) {
+          garnishesToInsert.push({
+            garnishCustom: g.garnishCustom || null,
+            garnishEntityId: g.garnishEntityId || null,
+            recipeId: recipe.id,
+          });
+        }
+      } else if (data.garnish) {
+        garnishesToInsert.push({
+          garnishCustom: data.garnish,
+          garnishEntityId: null,
+          recipeId: recipe.id,
+        });
+      }
+
+      if (garnishesToInsert.length > 0) {
+        await tx.insert(schema.recipeGarnishes).values(garnishesToInsert);
+      }
+
+      if (data.flavors && data.flavors.length > 0) {
+        const uniqueFlavors = Array.from(new Set(data.flavors.filter(Boolean)));
+        if (uniqueFlavors.length > 0) {
+          const existingFlavors = await tx
+            .select({ id: schema.flavors.id })
+            .from(schema.flavors)
+            .where(inArray(schema.flavors.id, uniqueFlavors));
+
+          const validFlavorIds = new Set(existingFlavors.map((f) => f.id));
+          const toInsert = uniqueFlavors.filter((f) => validFlavorIds.has(f));
+
+          if (toInsert.length > 0) {
+            await tx.insert(schema.recipeFlavors).values(
+              toInsert.map((flavorId) => ({
+                flavorId,
+                recipeId: recipe.id,
+              })),
+            );
+          }
+        }
+      }
+
+      return recipe.id;
+    });
+
+    return await this.findOne(newRecipeId);
+  }
 
   async findAll(query: GetRecipesQueryInput = {}): Promise<PaginatedResult<RecipeWithRelations>> {
     const page = Math.max(1, query.page || 1);
