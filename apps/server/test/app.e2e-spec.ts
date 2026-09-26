@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from './../src/app.module.js';
 
-describe('AppController (e2e)', () => {
+describe('Server E2E Tests', () => {
   let app: INestApplication;
   let pool: pg.Pool;
 
@@ -27,10 +27,6 @@ describe('AppController (e2e)', () => {
   afterAll(async () => {
     await app.close();
     await pool.end();
-  });
-
-  it('/ (GET)', () => {
-    return request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
   });
 
   it('/api/recipes (GET)', async () => {
