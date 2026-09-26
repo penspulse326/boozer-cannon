@@ -37,6 +37,8 @@ function handleClose() {
 
 useModalLock(isModalActive, handleClose);
 
+const isSubmitting = ref(false);
+
 const addForm = ref({
   author: '',
   base: 'Gin',
@@ -157,7 +159,11 @@ const liveAbvData = computed(() => {
   });
 });
 
-function submitAddRecipe() {
+async function submitAddRecipe() {
+  if (isSubmitting.value) {
+    return;
+  }
+
   const validIngredients = addForm.value.ingredients
     .filter((i) => i.name.trim() !== '' && i.amount.trim() !== '')
     .map((i) => ({
@@ -202,9 +208,16 @@ function submitAddRecipe() {
     strengthLevel: liveAbvData.value.strengthLevel,
   };
 
-  globalAddRecipe(newRecipe);
-  emit('submit', newRecipe);
-  handleClose();
+  isSubmitting.value = true;
+  try {
+    const created = await globalAddRecipe(newRecipe);
+    if (created) {
+      emit('submit', created);
+      handleClose();
+    }
+  } finally {
+    isSubmitting.value = false;
+  }
 }
 </script>
 
@@ -564,10 +577,12 @@ function submitAddRecipe() {
               取消
             </button>
             <button
-              class="rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-6 py-2.5 text-xs font-semibold text-speakeasy-950 shadow-lg shadow-amber-500/20 transition-all hover:brightness-110 active:scale-95 sm:text-sm"
+              :disabled="isSubmitting"
+              class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-6 py-2.5 text-xs font-semibold text-speakeasy-950 shadow-lg shadow-amber-500/20 transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
               type="submit"
             >
-              發布酒譜
+              <i v-if="isSubmitting" class="fa-solid fa-spinner animate-spin" />
+              <span>{{ isSubmitting ? '發布中...' : '發布酒譜' }}</span>
             </button>
           </div>
         </form>

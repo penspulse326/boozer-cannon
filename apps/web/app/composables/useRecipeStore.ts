@@ -1,4 +1,5 @@
 import type {
+  CreateRecipeDto,
   GetRecipesQueryDto,
   PaginatedResult,
   RecipeDto,
@@ -123,10 +124,81 @@ export function useRecipeStore(onNotify?: (message: string, icon?: string) => vo
     }
   }
 
-  function addRecipe(newRecipe: Recipe) {
-    recipes.value.unshift(newRecipe);
-    saveRecipesToStorage();
-    notify('成功發布新酒譜！', 'fa-circle-check');
+  async function addRecipe(newRecipe: CreateRecipeDto | Recipe): Promise<null | Recipe> {
+    try {
+      const payload: CreateRecipeDto = {
+        baseSpirit:
+          ('base' in newRecipe && newRecipe.base) ||
+          ('baseSpirit' in newRecipe && newRecipe.baseSpirit) ||
+          '',
+        calculatedAbv: newRecipe.calculatedAbv ? Number(newRecipe.calculatedAbv) : null,
+        desc:
+          ('desc' in newRecipe ? newRecipe.desc : 'story' in newRecipe ? newRecipe.story : '') ||
+          null,
+        flavors: newRecipe.flavors || [],
+        garnish: ('garnish' in newRecipe ? newRecipe.garnish : '') || null,
+        glassCustom:
+          ('glass' in newRecipe
+            ? newRecipe.glass
+            : 'glassCustom' in newRecipe
+              ? newRecipe.glassCustom
+              : '') || null,
+        iceCustom:
+          ('ice' in newRecipe
+            ? newRecipe.ice
+            : 'iceCustom' in newRecipe
+              ? newRecipe.iceCustom
+              : '') || null,
+        imageUrl:
+          ('image' in newRecipe
+            ? newRecipe.image
+            : 'imageUrl' in newRecipe
+              ? newRecipe.imageUrl
+              : '') || null,
+        ingredients: (newRecipe.ingredients || []).map((ing, idx) => ({
+          abv: ing.abv ? Number(ing.abv) : 0,
+          amount: Number(ing.amount),
+          brandCustom:
+            ('brandText' in ing ? ing.brandText : 'brandCustom' in ing ? ing.brandCustom : '') ||
+            null,
+          brandEntityId:
+            ('brandId' in ing ? ing.brandId : 'brandEntityId' in ing ? ing.brandEntityId : '') ||
+            null,
+          name: ing.name,
+          sortOrder: idx + 1,
+          unit: ing.unit || 'ml',
+        })),
+        instructions:
+          'steps' in newRecipe && newRecipe.steps
+            ? newRecipe.steps
+            : 'instructions' in newRecipe && newRecipe.instructions
+              ? newRecipe.instructions
+              : [],
+        method: newRecipe.method,
+        nameEn: newRecipe.nameEn || null,
+        nameZh: newRecipe.nameZh || null,
+      };
+
+      const res = await getFetch()<RecipeDto>('/api/recipes', {
+        body: payload,
+        method: 'POST',
+      });
+
+      const mapped = mapRecipeDtoToRecipe(res);
+      recipes.value.unshift(mapped);
+      saveRecipesToStorage();
+      notify('成功發布新酒譜！', 'fa-circle-check');
+      return mapped;
+    } catch {
+      if ('id' in newRecipe && typeof newRecipe.id === 'string') {
+        recipes.value.unshift(newRecipe as Recipe);
+        saveRecipesToStorage();
+        notify('伺服器連線異常，酒譜已暫存於本機！', 'fa-triangle-exclamation');
+        return newRecipe as Recipe;
+      }
+      notify('發布酒譜失敗，請重試！', 'fa-circle-exclamation');
+      return null;
+    }
   }
 
   async function toggleFavorite(id: string) {

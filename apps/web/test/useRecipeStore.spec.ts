@@ -111,4 +111,102 @@ describe('useRecipeStore - toggleLike and toggleFavorite', () => {
       'fa-circle-exclamation',
     );
   });
+
+  it('should call POST /api/recipes, prepend created recipe, and notify on success', async () => {
+    const notifyMock = vi.fn();
+    const { addRecipe, recipes } = useRecipeStore(notifyMock);
+    recipes.value = [];
+
+    const mockCreatedDto = {
+      author: {
+        avatarUrl: null,
+        id: '00000000-0000-0000-0000-000000000001',
+        name: 'BarCraft 調酒師',
+      },
+      authorId: '00000000-0000-0000-0000-000000000001',
+      baseSpirit: 'Gin',
+      calculatedAbv: 25,
+      createdAt: new Date().toISOString(),
+      dilutionRatio: 1.2,
+      favoritesCount: 0,
+      garnishes: [
+        {
+          garnishCustom: '檸檬皮',
+          garnishEntity: null,
+          garnishEntityId: null,
+          id: 'g1',
+        },
+      ],
+      glassCustom: '馬丁尼杯',
+      glassEntity: null,
+      glassEntityId: null,
+      iceCustom: null,
+      iceEntity: null,
+      iceEntityId: null,
+      id: '20000000-0000-0000-0000-000000000001',
+      imageUrl: 'https://img.test/photo.jpg',
+      ingredients: [
+        {
+          abv: 40,
+          amount: '50',
+          brandCustom: null,
+          brandEntity: null,
+          brandEntityId: null,
+          id: 'i1',
+          ingredientEntity: null,
+          ingredientEntityId: null,
+          name: '琴酒',
+          unit: 'ml',
+        },
+      ],
+      instructions: ['Step 1'],
+      likesCount: 0,
+      method: 'Stir',
+      nameEn: 'Custom Gin',
+      nameZh: '自訂琴酒',
+      recipeFlavors: [{ flavor: null, flavorId: 'flavor_sour' }],
+      story: '測試自訂酒譜',
+      updatedAt: new Date().toISOString(),
+    };
+
+    const fetchMock = vi.fn().mockResolvedValue(mockCreatedDto);
+    vi.stubGlobal('$fetch', fetchMock);
+
+    const result = await addRecipe(mockRecipe);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/recipes',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    );
+    expect(result).toBeDefined();
+    expect(recipes.value[0]?.id).toBe('20000000-0000-0000-0000-000000000001');
+    expect(recipes.value[0]?.nameZh).toBe('自訂琴酒');
+    expect(notifyMock).toHaveBeenCalledWith('成功發布新酒譜！', 'fa-circle-check');
+  });
+
+  it('should fallback to local storage and warn when API call fails', async () => {
+    const notifyMock = vi.fn();
+    const { addRecipe, recipes } = useRecipeStore(notifyMock);
+    recipes.value = [];
+
+    const fetchMock = vi.fn().mockRejectedValue(new Error('Network error'));
+    vi.stubGlobal('$fetch', fetchMock);
+
+    const result = await addRecipe(mockRecipe);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/recipes',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    );
+    expect(result).toBeDefined();
+    expect(recipes.value[0]?.id).toBe(mockRecipe.id);
+    expect(notifyMock).toHaveBeenCalledWith(
+      '伺服器連線異常，酒譜已暫存於本機！',
+      'fa-triangle-exclamation',
+    );
+  });
 });
