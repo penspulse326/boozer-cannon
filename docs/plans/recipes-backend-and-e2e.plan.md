@@ -112,16 +112,16 @@ flowchart TD
 
 ---
 
-### [ ] 階段 5：垂直切片 4 —— 新增自訂酒譜與事務寫入 (Create Custom Recipe)
+### [x] 階段 5：垂直切片 4 —— 新增自訂酒譜與事務寫入 (Create Custom Recipe)
 
 - **目標**：完成前台表單發布至後端資料庫事務儲存。
 - **工作項目**：
-  - [ ] 5.1 後端端點：`POST /api/recipes`
+  - [x] 5.1 後端端點：`POST /api/recipes`
     - 使用 Drizzle 事務（Transaction）同步寫入 `recipes`, `recipe_ingredients`, `recipe_flavors`。
     - 伺服器端資料校驗（DTO Validation）。
-  - [ ] 5.2 前端串接：
+  - [x] 5.2 前端串接：
     - `AddRecipeModal` 送出即時呼叫 API，成功後加入列表並彈出 Toast。
-- **預計 Commit**：
+- **完成 Commit**：
   ```bash
   feat(server): implement recipe creation api with drizzle transaction
   feat(web): connect add recipe form to api with toast notifications
