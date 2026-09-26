@@ -95,16 +95,16 @@ flowchart TD
 
 ---
 
-### [ ] 階段 4：垂直切片 3 —— 社群互動持久化 (Likes & Bookmarks)
+### [x] 階段 4：垂直切片 3 —— 社群互動持久化 (Likes & Bookmarks)
 
 - **目標**：使使用者的按讚與收藏狀態真實寫入 PostgreSQL。
 - **工作項目**：
-  - [ ] 4.1 後端端點：
+  - [x] 4.1 後端端點：
     - `POST /api/recipes/:id/like`
     - `POST /api/recipes/:id/favorite`
-  - [ ] 4.2 前端串接：
+  - [x] 4.2 前端串接：
     - 點擊按讚/收藏時採用樂觀更新（Optimistic UI），發出 API 請求並在失敗時復原。
-- **預計 Commit**：
+- **完成 Commit**：
   ```bash
   feat(server): implement recipe like and favorite endpoints
   feat(web): connect like and favorite actions with optimistic ui updates
